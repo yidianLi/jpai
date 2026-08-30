@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # AI库MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: ai-asset-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+      MYSQL_DATABASE: ai_asset_db
+      TZ: Asia/Shanghai
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+  # 本地大模型（Ollama，信创ARM架构也支持）
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ai-asset-ollama
+    restart: always
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    # 如有GPU可取消注释
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # 后端服务
+  backend:
+    build: ./backend
+    container_name: ai-asset-backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      AI_DB_HOST: mysql
+      AI_DB_PORT: 3306
+      AI_DB_USER: root
+      AI_DB_PASSWORD: "123456"
+      AI_DB_NAME: ai_asset_db
+      SOURCE_DB_HOST: host.docker.internal
+      SOURCE_DB_PORT: 3306
+      SOURCE_DB_USER: readonly
+      SOURCE_DB_PASSWORD: readonly
+      SOURCE_DB_NAME: jpsoft_db4
+      OLLAMA_BASE_URL: http://ollama:11434
+      TZ: Asia/Shanghai
+    depends_on:
+      - mysql
+      - ollama
+    volumes:
+      - ./backend/reports:/app/reports
+
+  # 前端Nginx
+  frontend:
+    image: nginx:alpine
+    container_name: ai-asset-frontend
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
+  ollama_data:
