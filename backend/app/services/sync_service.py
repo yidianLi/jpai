@@ -106,8 +106,12 @@ class SyncService:
             company_map = {r[0]: r[1] for r in company_rows}
             dept_rows = self.src.execute(text("SELECT DID, DEPT_NAME FROM jp_dept")).fetchall()
             dept_map = {r[0]: r[1] for r in dept_rows}
-            state_rows = self.src.execute(text("SELECT SID, REMARK FROM fs_state")).fetchall()
+            state_rows = self.src.execute(text("SELECT SID, STATE_NAME FROM fs_state")).fetchall()
             state_map = {r[0]: r[1] for r in state_rows}
+            # 未知状态默认名称（原系统字典不全，11400占绝大多数资产）
+            state_map.setdefault(11400, "在用")
+            state_map.setdefault(11410, "在用")
+            state_map.setdefault(11500, "在用")
 
             rows = self.src.execute(text("""
                 SELECT BOMID, BARCODE, BOM_NAME, MODEL, BRAND_NAME, SN, CSID, STATE,

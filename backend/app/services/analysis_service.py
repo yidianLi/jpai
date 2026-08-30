@@ -16,12 +16,16 @@ class AnalysisService:
 
     def get_overview(self):
         """资产总览指标"""
+        # 原系统在用状态：10400在用、10610内调、10640外调、10670个调、10680变更、11400(默认在用)
+        IN_USE_STATES = [10400, 10610, 10640, 10670, 10680, 11400, 11410]
+        IDLE_STATES = [10500]
+        SCRAP_STATES = [15000, 14900, 19900]
         total = self.db.query(func.count(AiAsset.asset_id)).scalar() or 0
         total_value = self.db.query(func.sum(AiAsset.buy_price)).scalar() or 0
         current_value = self.db.query(func.sum(AiAsset.current_value)).scalar() or 0
-        in_use = self.db.query(func.count(AiAsset.asset_id)).filter(AiAsset.state_id == 10400).scalar() or 0
-        idle = self.db.query(func.count(AiAsset.asset_id)).filter(AiAsset.is_idle == 1).scalar() or 0
-        scrap = self.db.query(func.count(AiAsset.asset_id)).filter(AiAsset.state_id == 15000).scalar() or 0
+        in_use = self.db.query(func.count(AiAsset.asset_id)).filter(AiAsset.state_id.in_(IN_USE_STATES)).scalar() or 0
+        idle = self.db.query(func.count(AiAsset.asset_id)).filter(or_(AiAsset.state_id.in_(IDLE_STATES), AiAsset.is_idle == 1)).scalar() or 0
+        scrap = self.db.query(func.count(AiAsset.asset_id)).filter(AiAsset.state_id.in_(SCRAP_STATES)).scalar() or 0
         warning_count = self.db.query(func.count(AiWarning.id)).filter(AiWarning.status == 0).scalar() or 0
         # 账实相符率（最近一次盘点）
         latest_check = self.db.query(func.max(AiCheckRecord.check_date)).scalar()
