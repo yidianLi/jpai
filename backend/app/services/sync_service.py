@@ -37,33 +37,41 @@ class SyncService:
     def sync_dictionaries(self):
         """同步字典表：单位、部门、分类、状态"""
         try:
+            self.ai.execute(text("SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO'"))
             # 单位
             rows = self.src.execute(text("SELECT CID, P_CID, CO_CODE, CO_NAME, STATE FROM jp_company")).fetchall()
-            self.ai.query(AiCompany).delete()
+            self._reset_table(AiCompany, "ai_company")
             for r in rows:
                 self.ai.add(AiCompany(company_id=r[0], parent_id=r[1], company_code=r[2], company_name=r[3], state=r[4] or 1))
             # 部门
             rows = self.src.execute(text("SELECT DID, CID, P_DID, DEPT_CODE, DEPT_NAME, STATE FROM jp_dept")).fetchall()
-            self.ai.query(AiDepartment).delete()
+            self._reset_table(AiDepartment, "ai_department")
             for r in rows:
                 self.ai.add(AiDepartment(dept_id=r[0], company_id=r[1], parent_id=r[2], dept_code=r[3], dept_name=r[4], state=r[5] or 1))
             # 分类
             rows = self.src.execute(text("SELECT CSID, P_CSID, CLASS_CODE, CLASS_NAME, USE_YEAR, LOWEST, STATE FROM fs_class")).fetchall()
             class_map = {r[0]: {"parent_id": r[1], "name": r[3]} for r in rows}
-            self.ai.query(AiAssetClass).delete()
+            self._reset_table(AiAssetClass, "ai_asset_class")
             for r in rows:
                 self.ai.add(AiAssetClass(class_id=r[0], parent_id=r[1], class_code=r[2], class_name=r[3], use_year=r[4], is_lowest=r[5] or 0, state=r[6] or 1))
             # 状态
             rows = self.src.execute(text("SELECT SID, STATE_NAME, REMARK, STATE_IDX, STATE FROM fs_state")).fetchall()
-            self.ai.query(AiAssetState).delete()
+            self._reset_table(AiAssetState, "ai_asset_state")
             for r in rows:
                 self.ai.add(AiAssetState(state_id=r[0], state_name=r[1], state_label=r[2], state_idx=r[3] or r[0], is_valid=r[4] or 1))
             self.ai.commit()
-            logger.info(f"字典同步完成: 单位{len(rows)}条")
+            logger.info(f"字典同步完成")
         except Exception as e:
             self.ai.rollback()
             logger.error(f"字典同步失败: {e}")
             raise
+
+    def _reset_table(self, model, table_name):
+        """清空表并重置自增计数器，允许0值主键"""
+        self.ai.query(model).delete()
+        self.ai.commit()
+        self.ai.execute(text(f"ALTER TABLE {table_name} AUTO_INCREMENT = 1"))
+        self.ai.execute(text("SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO'"))
 
     def sync_users(self):
         """同步用户"""
@@ -73,7 +81,7 @@ class SyncService:
                        u.MOBILE, u.EMAIL, u.STATE, r.ROLE_NAME
                 FROM jp_user u LEFT JOIN jp_role r ON u.RID = r.RID
             """)).fetchall()
-            self.ai.query(AiUser).delete()
+            self._reset_table(AiUser, "ai_user")
             for r in rows:
                 is_admin = 1 if (r[10] and "管理员" in r[10]) or r[1] == "admin" else 0
                 self.ai.add(AiUser(
@@ -110,6 +118,8 @@ class SyncService:
             """)).fetchall()
 
             self.ai.query(AiAsset).delete()
+            self.ai.commit()
+            self.ai.execute(text("ALTER TABLE ai_asset AUTO_INCREMENT = 1"))
             now = datetime.now()
             batch = []
             for r in rows:
@@ -124,7 +134,8 @@ class SyncService:
                 # 净值计算（直线法）
                 current_value = r[14] or 0
                 if buy_date and use_year and r[14]:
-                    used_days = (now.date() - buy_date).days
+                    bd = buy_date.date() if hasattr(buy_date, 'date') else buy_date
+                    used_days = (now.date() - bd).days
                     total_days = use_year * 365
                     if total_days > 0 and used_days > 0:
                         depreciable = r[14] * (1 - settings.RESIDUAL_RATE)
@@ -235,6 +246,8 @@ class SyncService:
 
     def sync_all(self):
         """执行全量同步"""
+        self.ai.execute(text("SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO'"))
+        self.ai.commit()
         self.sync_dictionaries()
         self.sync_users()
         self.sync_assets()

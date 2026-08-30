@@ -15,7 +15,18 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_PREFIX}/auth/login
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    """兼容原系统MD5和bcrypt两种密码格式"""
+    if not hashed:
+        return False
+    # 原系统密码是32位MD5哈希
+    if len(hashed) == 32 and all(c in '0123456789abcdefABCDEF' for c in hashed):
+        import hashlib
+        return hashlib.md5(plain.encode('utf-8')).hexdigest().upper() == hashed.upper()
+    # 新系统用bcrypt
+    try:
+        return pwd_context.verify(plain, hashed)
+    except Exception:
+        return False
 
 
 def get_password_hash(password: str) -> str:

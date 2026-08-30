@@ -6,7 +6,7 @@
     <div class="tech-card" style="margin-bottom:16px;">
       <div class="card-title">AI自然语言查询 <span class="tag-blue" style="margin-left:8px;">本地大模型驱动</span></div>
       <div class="nl-search">
-        <el-input v-model="nlQuery" placeholder="例如：办公室有多少台闲置的笔记本电脑？" size="large" @keyup.enter="doNlQuery">
+        <el-input v-model="nlInput" placeholder="例如：办公室有多少台闲置的笔记本电脑？" size="large" @keyup.enter="doNlQuery">
           <template #prefix><el-icon><ChatDotRound /></el-icon></template>
           <template #append><el-button type="primary" @click="doNlQuery" :loading="nlLoading">查询</el-button></template>
         </el-input>
@@ -62,7 +62,7 @@
     <div class="tech-card" style="margin-top:16px;">
       <div class="card-title" style="display:flex;justify-content:space-between;">
         <span>采购需求预测（规则驱动+移动平均）</span>
-        <el-button type="primary" size="small" @click="computeForecast">重新计算</el-button>
+        <el-button type="primary" size="small" @click="runForecast">重新计算</el-button>
       </div>
       <el-table :data="forecast" size="small">
         <el-table-column prop="class_name" label="资产类别" />
@@ -80,7 +80,7 @@ import { queryAssets, nlQuery, getForecast, computeForecast, getDepartments, get
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const nlQuery = ref('')
+const nlInput = ref('')
 const nlLoading = ref(false)
 const nlAnswer = ref(null)
 const quickQueries = ['有多少台闲置的电脑', '哪个部门资产最多', '今年新增了多少资产', '即将到期的资产有哪些']
@@ -94,9 +94,9 @@ const states = ref([])
 const depts = ref([])
 
 const doNlQuery = async () => {
-  if (!nlQuery.value) return
+  if (!nlInput.value) return
   nlLoading.value = true
-  try { nlAnswer.value = await nlQuery(nlQuery.value) } finally { nlLoading.value = false }
+  try { nlAnswer.value = await nlQuery(nlInput.value) } finally { nlLoading.value = false }
 }
 const doQuery = async () => {
   const params = { ...filter, page: page.value, size: 20 }
@@ -122,7 +122,7 @@ const exportExcel = () => {
   a.click()
 }
 const loadForecast = async () => { forecast.value = await getForecast() }
-const computeForecast = async () => { await computeForecast(6); loadForecast() }
+const runForecast = async () => { await computeForecast(6); loadForecast() }
 onMounted(async () => {
   doQuery()
   loadForecast()

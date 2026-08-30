@@ -26,7 +26,7 @@ class AiDepartment(Base):
 class AiUser(Base):
     __tablename__ = "ai_user"
     user_id = Column(Integer, primary_key=True, comment="用户ID")
-    user_code = Column(String(32), unique=True, comment="账号")
+    user_code = Column(String(32), index=True, comment="账号")
     user_name = Column(String(32), comment="姓名")
     password = Column(String(128), comment="密码(MD5)")
     company_id = Column(BigInteger)

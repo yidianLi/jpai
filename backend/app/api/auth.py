@@ -16,10 +16,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     user = db.query(AiUser).filter(AiUser.user_code == form_data.username).first()
     if not user:
         raise HTTPException(status_code=401, detail="用户名或密码错误")
-    # 原系统密码是MD5，这里兼容：先比对明文MD5，再比对bcrypt
-    import hashlib
-    md5_pwd = hashlib.md5(form_data.password.encode()).hexdigest()
-    if user.password != md5_pwd and not verify_password(form_data.password, user.password or ""):
+    if not verify_password(form_data.password, user.password or ""):
         raise HTTPException(status_code=401, detail="用户名或密码错误")
     if user.state != 1:
         raise HTTPException(status_code=403, detail="账号已停用")
@@ -49,9 +46,7 @@ def get_me(user: AiUser = Depends(get_current_user)):
 
 @router.post("/change-password")
 def change_password(old_pwd: str, new_pwd: str, user: AiUser = Depends(get_current_user), db: Session = Depends(get_ai_db)):
-    import hashlib
-    md5_old = hashlib.md5(old_pwd.encode()).hexdigest()
-    if user.password != md5_old and not verify_password(old_pwd, user.password or ""):
+    if not verify_password(old_pwd, user.password or ""):
         raise HTTPException(status_code=400, detail="原密码错误")
     user.password = get_password_hash(new_pwd)
     db.commit()

@@ -99,6 +99,6 @@ def compute_forecast(months: int = 6, user: AiUser = Depends(get_current_user)):
 
 @router.get("/llm-health")
 def llm_health(user: AiUser = Depends(get_current_user)):
-    """检查本地大模型状态"""
-    llm = LLMService()
-    return llm.check_ollama_health()
+    """检查大模型状态"""
+    from ..services.llm_service import llm_service
+    return llm_service.check_health()

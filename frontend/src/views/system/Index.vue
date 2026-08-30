@@ -31,7 +31,7 @@
             <el-table-column prop="company_id" label="单位ID" width="120" />
             <el-table-column label="人数" width="200">
               <template #default="{ row }">
-                <el-input-number v-model="row.headcount" :min="0" size="small" @change="updateHeadcount(row)" />
+                <el-input-number v-model="row.headcount" :min="0" size="small" @change="saveHeadcount(row)" />
               </template>
             </el-table-column>
           </el-table>
@@ -76,7 +76,7 @@ const doSync = async (type) => {
   } finally { syncLoading.value = false }
 }
 const loadDepts = async () => { depts.value = await getDepartments() }
-const updateHeadcount = async (row) => {
+const saveHeadcount = async (row) => {
   await updateHeadcount(row.dept_id, row.headcount)
   ElMessage.success('已更新')
 }
