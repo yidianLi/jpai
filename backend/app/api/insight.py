@@ -14,13 +14,13 @@ class ExplainRequest(BaseModel):
 @router.get('/brands')
 def brands(class_id: int = None, dept_id: int = None, min_sample: int = 10, user: AiUser = Depends(get_current_user)):
     svc = InsightService()
-    try: return {"list": svc.brands(user, class_id, dept_id, min_sample), "data_quality": {"brand_source": "ai_asset.brand", "repair_bill_type": 10700}}
+    try: return {"list": svc.brands(user, class_id, dept_id, min_sample), "data_quality": {"brand_source": "ai_asset.brand", "repair_bill_type": 10700, **svc.quality_metadata()}}
     finally: svc.close()
 
 @router.get('/models')
 def models(brand: str = None, class_id: int = None, min_sample: int = 10, user: AiUser = Depends(get_current_user)):
     svc = InsightService()
-    try: return {"list": svc.models(user, brand, class_id, min_sample), "data_quality": {"repair_bill_type": 10700}}
+    try: return {"list": svc.models(user, brand, class_id, min_sample), "data_quality": {"repair_bill_type": 10700, **svc.quality_metadata()}}
     finally: svc.close()
 
 @router.get('/models/evidence')

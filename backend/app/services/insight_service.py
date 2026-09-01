@@ -1,4 +1,5 @@
 from sqlalchemy import case, func
+from datetime import datetime
 from ..database import AiSessionLocal
 from ..models.asset import AiAsset, AiAssetTransfer, AiCheckRecord
 from ..core.data_scope import apply_data_scope
@@ -7,6 +8,12 @@ from ..core.data_scope import apply_data_scope
 class InsightService:
     def __init__(self): self.db = AiSessionLocal()
     def close(self): self.db.close()
+
+    def quality_metadata(self):
+        cutoff = self.db.query(func.max(AiAsset.sync_time)).scalar()
+        return {"ai_used": False, "data_cutoff": cutoff.isoformat() if cutoff else None,
+                "sample_definition": "按权限范围内资产台账去重统计，维修工单类型=10700",
+                "rules_version": "insight-v1", "generated_at": datetime.now().isoformat()}
 
     def brands(self, user, class_id=None, dept_id=None, min_sample=10):
         q = apply_data_scope(self.db.query(AiAsset), user).filter(AiAsset.brand.isnot(None), AiAsset.brand != "")
