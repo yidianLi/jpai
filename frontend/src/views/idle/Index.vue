@@ -20,6 +20,7 @@
           <span class="result-count">共 {{ total }} 条资产</span>
         </el-space>
       </div>
+      <FilterChips :items="activeFilters" @remove="removeFilter" @clear="clearFilters" />
       <DataState :loading="loading" :error="error" :empty="!list.length" empty-text="当前筛选下暂无闲置资产" @retry="loadList"><template #default><el-table :data="list" size="small" width="100%" max-height="500" fit class="idle-table">
         <el-table-column prop="barcode" label="资产编号" width="180" show-overflow-tooltip />
         <el-table-column prop="asset_name" label="资产名称" width="185" show-overflow-tooltip />
@@ -50,11 +51,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getIdlePool, getIdleStats, refreshIdle } from '@/api'
 import DataState from '@/components/DataState.vue'
+import FilterChips from '@/components/FilterChips.vue'
 const router = useRouter()
 
 const list = ref([])
@@ -65,6 +67,9 @@ const searchDept = ref('')
 const minDays = ref(null)
 const loading = ref(false)
 const error = ref(false)
+const activeFilters = computed(() => { const a=[]; if(searchDept.value) a.push({key:'dept',label:'部门',value:searchDept.value}); if(minDays.value) a.push({key:'days',label:'闲置时长',value:`${minDays.value}天以上`}); return a })
+const removeFilter = key => { if(key==='dept') searchDept.value=''; if(key==='days') minDays.value=null; page.value=1; loadList() }
+const clearFilters = () => { searchDept.value=''; minDays.value=null; page.value=1; loadList() }
 const formatAmount = (_, __, value) => value == null ? '-' : Number(value).toLocaleString('zh-CN', { maximumFractionDigits: 2 })
 
 const loadList = async () => {

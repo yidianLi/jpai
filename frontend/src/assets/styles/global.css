@@ -14,4 +14,5 @@ button, input, textarea, select { font:inherit; }
 .el-button { min-height:36px; border-radius:6px; }.el-button--small { min-height:30px; }.el-button.is-link { min-height:28px; }
 .el-form-item__label { color:#53657d; font-weight:500; }.el-dialog { border-radius:12px; }.el-drawer__header { margin-bottom:12px; }.el-empty { padding:36px 0; }
 .toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:10px 12px; padding:14px 16px; margin-bottom:16px; background:#f8fafc; border:1px solid #e6edf5; border-radius:8px; }.page-description { line-height:1.7; margin-bottom:18px; color:var(--text-secondary); }
+.filter-chips + .el-table, .filter-chips + .data-state { margin-top:4px; }
 @media (max-width: 1100px) { .main-content { padding-left:20px!important; padding-right:20px!important; } }

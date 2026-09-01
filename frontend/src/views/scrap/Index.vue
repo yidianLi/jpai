@@ -8,11 +8,12 @@
           <el-select v-model="filterDays" placeholder="到期范围" clearable size="small" style="width:140px" @change="loadList">
             <el-option :value="90" label="3个月内" />
             <el-option :value="180" label="6个月内" />
-            <el-option :value="365" label="1年内" />
+          <el-option :value="365" label="1年内" />
           </el-select>
           <el-button type="primary" size="small" @click="batchEval" :disabled="!selected.length">批量评估({{ selected.length }})</el-button>
         </el-space>
       </div>
+      <FilterChips :items="activeFilters" @remove="removeFilter" @clear="clearFilters" />
       <el-table :data="list" size="small" max-height="450" @selection-change="selected = $">
         <el-table-column type="selection" width="40" />
         <el-table-column prop="barcode" label="资产编号" width="160" />
@@ -57,14 +58,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getExpireList, evaluateAsset, batchEvaluate } from '@/api'
+import FilterChips from '@/components/FilterChips.vue'
 
 const list = ref([])
 const total = ref(0)
 const page = ref(1)
 const filterDays = ref(null)
+const activeFilters = computed(() => filterDays.value ? [{ key: 'days', label: '到期范围', value: `${filterDays.value}天内` }] : [])
+const removeFilter = () => { filterDays.value=null; page.value=1; loadList() }
+const clearFilters = () => { filterDays.value=null; page.value=1; loadList() }
 const selected = ref([])
 const evalVisible = ref(false)
 const evalResult = ref(null)

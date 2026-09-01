@@ -72,6 +72,7 @@
         <el-form-item label="价值区间"><el-input-number v-model="filter.min_price" placeholder="最小" style="width:100px;" /> - <el-input-number v-model="filter.max_price" placeholder="最大" style="width:100px;" /></el-form-item>
         <el-form-item><el-button type="primary" @click="doQuery">查询</el-button><el-button @click="resetFilter">重置</el-button><el-button @click="exportExcel">导出Excel</el-button></el-form-item>
       </el-form>
+      <FilterChips :items="activeFilters" @remove="removeFilter" @clear="resetFilter" />
     </div>
 
     <!-- 查询结果 -->
@@ -117,6 +118,7 @@ import { ChatDotRound } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { queryAssets, nlQuery, importAssetFile, getForecast, computeForecast, getDepartments, getAssetClasses, getAssetStates, getLlmStatus } from '@/api'
 import { useRouter, useRoute } from 'vue-router'
+import FilterChips from '@/components/FilterChips.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -167,6 +169,8 @@ const activeShortcutEntry = computed(() => activeShortcutGroup.value.entries.fin
 watch(shortcutGroup, () => { shortcutEntry.value = activeShortcutGroup.value.entries[0]?.key || '' })
 const activeShortcutItems = computed(() => activeShortcutEntry.value?.key?.startsWith('custom-') ? customShortcuts.value.filter(item => item.entryKey === activeShortcutEntry.value.key) : activeShortcutEntry.value?.items || [])
 const filter = reactive({ keyword: '', class_id: null, state_id: null, dept_id: null, is_idle: null, min_price: null, max_price: null })
+const activeFilters = computed(() => { const items=[]; if(filter.keyword) items.push({key:'keyword',label:'关键词',value:filter.keyword}); if(filter.class_id) items.push({key:'class_id',label:'分类',value:classes.value.find(x=>x.class_id===filter.class_id)?.class_name||filter.class_id}); if(filter.state_id) items.push({key:'state_id',label:'状态',value:states.value.find(x=>x.state_id===filter.state_id)?.state_name||filter.state_id}); if(filter.dept_id) items.push({key:'dept_id',label:'部门',value:depts.value.find(x=>x.dept_id===filter.dept_id)?.dept_name||filter.dept_id}); if(filter.is_idle !== null) items.push({key:'is_idle',label:'是否闲置',value:filter.is_idle===1?'是':'否'}); if(filter.min_price!=null) items.push({key:'min_price',label:'最低价值',value:filter.min_price}); if(filter.max_price!=null) items.push({key:'max_price',label:'最高价值',value:filter.max_price}); return items })
+const removeFilter = key => { if(key==='keyword') filter.keyword=''; else if(key==='class_id') filter.class_id=null; else if(key==='state_id') filter.state_id=null; else if(key==='dept_id') filter.dept_id=null; else if(key==='is_idle') filter.is_idle=null; else filter[key]=null; page.value=1; doQuery() }
 const results = ref([])
 const total = ref(0)
 const totalReady = ref(false)

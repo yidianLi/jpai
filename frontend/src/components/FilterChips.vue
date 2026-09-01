@@ -1,0 +1,3 @@
+<template><div v-if="items.length" class="filter-chips"><span class="filter-chips-label">已选条件</span><el-tag v-for="item in items" :key="item.key" closable size="small" effect="plain" @close="$emit('remove', item.key)">{{ item.label }}：{{ item.value }}</el-tag><el-button link type="primary" size="small" @click="$emit('clear')">清空全部</el-button></div></template>
+<script setup>defineProps({ items: { type: Array, default: () => [] } }); defineEmits(['remove','clear'])</script>
+<style scoped>.filter-chips{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-4px 0 12px}.filter-chips-label{color:#8191a7;font-size:12px}</style>
