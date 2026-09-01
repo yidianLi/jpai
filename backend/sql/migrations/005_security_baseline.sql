@@ -1,0 +1,3 @@
+ALTER TABLE ai_user ADD COLUMN failed_login_count INT NOT NULL DEFAULT 0;
+ALTER TABLE ai_user ADD COLUMN locked_until DATETIME NULL;
+ALTER TABLE ai_user ADD COLUMN token_version INT NOT NULL DEFAULT 1;

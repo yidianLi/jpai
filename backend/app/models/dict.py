@@ -35,6 +35,9 @@ class AiUser(Base):
     role_name = Column(String(64), comment="角色名称")
     mobile = Column(String(32))
     email = Column(String(50))
+    failed_login_count = Column(Integer, default=0, nullable=False)
+    locked_until = Column(DateTime, nullable=True)
+    token_version = Column(Integer, default=1, nullable=False)
     state = Column(SmallInteger, default=1)
     is_admin = Column(SmallInteger, default=0, comment="是否管理员")
 

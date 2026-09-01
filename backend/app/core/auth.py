@@ -58,7 +58,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     except JWTError:
         raise credentials_exception
     user = db.query(AiUser).filter(AiUser.user_id == user_id).first()
-    if user is None or user.state != 1:
+    if user is None or user.state != 1 or int(payload.get("token_version", 0)) != int(user.token_version or 1):
         raise credentials_exception
     return user
 
