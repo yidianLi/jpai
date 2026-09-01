@@ -10,7 +10,7 @@ from .config import settings
 from .database import ai_engine, Base
 from .core.scheduler import start_scheduler
 from .core.migrations import run_migrations
-from .api import dashboard, check, idle, lifecycle, scrap, query, system, auth, transfer, insight, procurement, orchestration
+from .api import dashboard, check, idle, lifecycle, scrap, query, system, auth, transfer, insight, procurement, orchestration, jobs
 
 
 @asynccontextmanager
@@ -65,3 +65,5 @@ app.include_router(transfer.router, prefix=f"{settings.API_PREFIX}/transfer", ta
 app.include_router(insight.router, prefix=f"{settings.API_PREFIX}/insight", tags=["品牌型号分析"])
 app.include_router(procurement.router, prefix=f"{settings.API_PREFIX}/procurement", tags=["采购建议"])
 app.include_router(orchestration.router, prefix=f"{settings.API_PREFIX}/orchestration", tags=["多智能体编排"])
+
+app.include_router(jobs.router, prefix=f'{settings.API_PREFIX}/jobs', tags=['jobs'])

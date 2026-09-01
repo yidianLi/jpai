@@ -69,6 +69,8 @@ export const computeForecast = (months) => request.post('/query/forecast/compute
 export const getLlmHealth = () => request.get('/query/llm-health')
 export const getLlmStatus = () => request.get('/query/llm-status')
 export const getJobStatus = (jobId) => request.get(`/orchestration/jobs/${encodeURIComponent(jobId)}`)
+export const getPersistentJob = (jobId) => request.get(`/jobs/${encodeURIComponent(jobId)}`)
+export const cancelPersistentJob = (jobId) => request.post(`/jobs/${encodeURIComponent(jobId)}/cancel`)
 
 // 系统
 export const syncAll = () => request.post('/system/sync/all')

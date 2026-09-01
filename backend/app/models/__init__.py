@@ -5,3 +5,4 @@ from .report import AiReport, AiDataClean, AiQualityIssue, AiNlQueryLog, AiPurch
 from .transfer import AiTransferSuggestion, AiTransferAudit
 from .procurement import AiProcurementSuggestion
 from .audit import AiAuditEvent
+from .job import AiJob
