@@ -1,5 +1,5 @@
 """领导驾驶舱接口"""
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from sqlalchemy.orm import Session
 from fastapi.responses import FileResponse
 from pathlib import Path
@@ -105,7 +105,7 @@ def dept_ranking(user: AiUser = Depends(get_current_user)):
 
 
 @router.get("/warnings")
-def warnings(type: str = None, level: int = None, status: int = 0, page: int = 1, size: int = 20, user: AiUser = Depends(get_current_user)):
+def warnings(type: str = None, level: int = None, status: int = 0, page: int = Query(1, ge=1), size: int = Query(20, ge=1, le=200), user: AiUser = Depends(get_current_user)):
     svc = WarningService()
     data = svc.get_warning_list(type, level, status, page, size)
     svc.close()
@@ -153,7 +153,7 @@ def retry_report_job(job_id: str, user: AiUser = Depends(get_current_user)):
 
 
 @router.get("/reports")
-def report_list(type: str = None, page: int = 1, size: int = 20, user: AiUser = Depends(get_current_user)):
+def report_list(type: str = None, page: int = Query(1, ge=1), size: int = Query(20, ge=1, le=200), user: AiUser = Depends(get_current_user)):
     svc = ReportService()
     data = svc.get_report_list(type, page, size)
     svc.close()

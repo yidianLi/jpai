@@ -1,5 +1,5 @@
 """闲置资产盘活接口"""
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from ..models.dict import AiUser
 from ..core.auth import get_current_user
 from ..services.idle_service import IdleService
@@ -8,7 +8,7 @@ router = APIRouter()
 
 
 @router.get("/pool")
-def idle_pool(dept: str = None, min_days: int = None, page: int = 1, size: int = 20, user: AiUser = Depends(get_current_user)):
+def idle_pool(dept: str = None, min_days: int = None, page: int = Query(1, ge=1), size: int = Query(20, ge=1, le=200), user: AiUser = Depends(get_current_user)):
     svc = IdleService()
     data = svc.get_idle_list(dept, None, min_days, page, size)
     svc.close()

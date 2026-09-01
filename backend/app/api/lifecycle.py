@@ -1,5 +1,5 @@
 """资产生命周期档案接口"""
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from ..models.dict import AiUser
 from ..core.auth import get_current_user
 from ..services.lifecycle_service import LifecycleService
@@ -25,7 +25,7 @@ def data_quality(user: AiUser = Depends(get_current_user)):
     return data
 
 @router.get("/quality-issues")
-def quality_issues(status: str = None, issue_type: str = None, page: int = 1, size: int = 20, user: AiUser = Depends(get_current_user)):
+def quality_issues(status: str = None, issue_type: str = None, page: int = Query(1, ge=1), size: int = Query(20, ge=1, le=200), user: AiUser = Depends(get_current_user)):
     svc = LifecycleService()
     try: return svc.list_quality_issues(status, issue_type, page, min(size, 100))
     finally: svc.close()
@@ -42,7 +42,7 @@ def quality_issue_action(issue_id: int, action: str, assignee: str = None, remar
 
 
 @router.get("/abnormal-assets")
-def abnormal_assets(issue_type: str = None, page: int = 1, size: int = 20, user: AiUser = Depends(get_current_user)):
+def abnormal_assets(issue_type: str = None, page: int = Query(1, ge=1), size: int = Query(20, ge=1, le=200), user: AiUser = Depends(get_current_user)):
     svc = LifecycleService()
     data = svc.get_abnormal_assets(issue_type, page, size)
     svc.close()

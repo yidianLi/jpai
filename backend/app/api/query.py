@@ -1,5 +1,5 @@
 """智能查询与分析接口"""
-from fastapi import APIRouter, Depends, HTTPException, Body, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Body, UploadFile, File, Query
 from typing import Optional
 from sqlalchemy import and_, or_, func
 from sqlalchemy.orm import Session
@@ -66,7 +66,7 @@ def query_assets(
     min_price: float = None, max_price: float = None,
     start_date: str = None, end_date: str = None,
     is_idle: int = None,
-    page: int = 1, size: int = 20, include_total: bool = True,
+    page: int = Query(1, ge=1), size: int = Query(20, ge=1, le=200), include_total: bool = True,
     db: Session = Depends(get_ai_db),
     user: AiUser = Depends(get_current_user)
 ):

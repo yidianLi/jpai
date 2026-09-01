@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from ..models.dict import AiUser
 from ..core.auth import get_current_user
 from ..schemas.transfer import TransferCreate, TransferDecision
@@ -12,7 +12,7 @@ def run(method, *args):
     finally: svc.close()
 
 @router.get("/suggestions")
-def list_suggestions(status: str = None, page: int = 1, size: int = 20, user: AiUser = Depends(get_current_user)):
+def list_suggestions(status: str = None, page: int = Query(1, ge=1), size: int = Query(20, ge=1, le=200), user: AiUser = Depends(get_current_user)):
     return run("list", user, status, page, size)
 
 @router.post("/suggestions")

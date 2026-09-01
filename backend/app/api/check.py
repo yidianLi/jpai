@@ -1,5 +1,5 @@
 """智能盘点接口"""
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from ..models.dict import AiUser
 from ..core.auth import get_current_user
 from ..services.check_service import CheckService
@@ -16,7 +16,7 @@ def check_tasks(user: AiUser = Depends(get_current_user)):
 
 
 @router.get("/tasks/{check_bid}/detail")
-def check_detail(check_bid: int, state: int = None, page: int = 1, size: int = 20, user: AiUser = Depends(get_current_user)):
+def check_detail(check_bid: int, state: int = None, page: int = Query(1, ge=1), size: int = Query(20, ge=1, le=200), user: AiUser = Depends(get_current_user)):
     svc = CheckService()
     data = svc.get_check_detail(check_bid, state, page, size)
     svc.close()
