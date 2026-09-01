@@ -97,7 +97,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { Files } from '@element-plus/icons-vue'
-import { queryAssets, getAssetDetail, getDataQuality, getAbnormalAssets } from '@/api'
+import { queryAssets, getAssetDetail, getDataQuality, getAbnormalAssets, getQualityIssues, actionQualityIssue } from '@/api'
 
 const keyword = ref('')
 const searchResults = ref([])
@@ -106,6 +106,8 @@ const searchPage = ref(1)
 const asset = ref(null)
 const dq = ref({})
 const abnormalList = ref([])
+const qualityIssues = ref([])
+const issueStatus = ref('')
 const route = useRoute()
 const isQualityView = computed(() => route.meta.view === 'quality')
 
@@ -123,6 +125,8 @@ const loadAbnormal = async () => {
   const res = await getAbnormalAssets({ size: 20 })
   abnormalList.value = res.list
 }
+const loadIssues = async () => { const res = await getQualityIssues({ status: issueStatus.value || undefined, size: 50 }); qualityIssues.value = res.list || [] }
+const issueAction = async (row, action) => { await actionQualityIssue(row.id, action, { remark: action === 'fix' ? '已完成数据修复，待复核' : undefined }); await loadIssues(); await loadDQ() }
 onMounted(async () => {
   await search()
   const requestedId = Number(route.query.id)
@@ -130,7 +134,7 @@ onMounted(async () => {
     ? searchResults.value.find(item => item.asset_id === requestedId)
     : searchResults.value[0]
   if (initialAsset) await selectAsset(initialAsset)
-  loadDQ(); loadAbnormal()
+  loadDQ(); loadAbnormal(); loadIssues()
 })
 </script>
 

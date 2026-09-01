@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import func
 from ..database import AiSessionLocal
 from ..models.asset import AiAsset, AiAssetTransfer, AiCheckRecord
-from ..models.report import AiDataClean
+from ..models.report import AiDataClean, AiQualityIssue
 
 
 class LifecycleService:
@@ -85,8 +85,42 @@ class LifecycleService:
             },
             "avg_quality_score": round(
                 self.db.query(func.avg(AiAsset.data_quality_score)).scalar() or 0, 1
-            )
+            ),
+            "open_issue_count": self.db.query(AiQualityIssue).filter(AiQualityIssue.status.in_(["open", "assigned", "fixed"])).count()
         }
+
+    def sync_quality_issues(self):
+        assets = self.db.query(AiAsset).filter(AiAsset.clean_status == 2).all()
+        now = datetime.now(); created = 0
+        for asset in assets:
+            checks = []
+            if not asset.asset_name or asset.asset_name in ["*", "1", "2", "3", "11"]: checks.append(("name", "资产名称缺失或异常"))
+            if not asset.dept_id: checks.append(("dept", "资产所属部门缺失"))
+            if not asset.position: checks.append(("position", "资产存放位置缺失"))
+            if not asset.responsible and not asset.user_name: checks.append(("responsible", "资产责任人缺失"))
+            for issue_type, title in checks:
+                exists = self.db.query(AiQualityIssue).filter(AiQualityIssue.asset_id == asset.asset_id, AiQualityIssue.issue_type == issue_type, AiQualityIssue.status.in_(["open", "assigned", "fixed"])).first()
+                if not exists:
+                    self.db.add(AiQualityIssue(asset_id=asset.asset_id, issue_type=issue_type, issue_title=title, status="open", created_by="system", created_at=now, updated_at=now)); created += 1
+        if created: self.db.commit()
+        return created
+
+    def list_quality_issues(self, status=None, issue_type=None, page=1, size=20):
+        self.sync_quality_issues()
+        q = self.db.query(AiQualityIssue, AiAsset).join(AiAsset, AiAsset.asset_id == AiQualityIssue.asset_id)
+        if status: q = q.filter(AiQualityIssue.status == status)
+        if issue_type: q = q.filter(AiQualityIssue.issue_type == issue_type)
+        total = q.count(); rows = q.order_by(AiQualityIssue.updated_at.desc()).offset((page - 1) * size).limit(size).all()
+        return {"total": total, "page": page, "size": size, "list": [{"id": i.id, "asset_id": i.asset_id, "barcode": a.barcode, "asset_name": a.asset_name, "dept_name": a.dept_name, "issue_type": i.issue_type, "issue_title": i.issue_title, "status": i.status, "assignee": i.assignee, "due_date": str(i.due_date) if i.due_date else None, "fix_remark": i.fix_remark} for i, a in rows]}
+
+    def update_quality_issue(self, issue_id, action, user, assignee=None, remark=None):
+        issue = self.db.query(AiQualityIssue).filter(AiQualityIssue.id == issue_id).first()
+        if not issue: return None
+        states = {"assign": "assigned", "fix": "fixed", "verify": "verified", "reject": "rejected", "reopen": "open"}
+        if action not in states: raise ValueError("不支持的质量问题操作")
+        issue.status = states[action]; issue.assignee = assignee or issue.assignee; issue.fix_remark = remark or issue.fix_remark; issue.updated_at = datetime.now()
+        if action == "verify": issue.verified_by, issue.verified_at = user, datetime.now()
+        self.db.commit(); return issue
 
     def get_abnormal_assets(self, issue_type=None, page=1, size=20):
         """获取异常资产列表"""

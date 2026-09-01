@@ -46,6 +46,8 @@ export const confirmProcurementSuggestion = (id) => request.post(`/procurement/s
 // 生命周期
 export const getAssetDetail = (id) => request.get(`/lifecycle/asset/${id}`)
 export const getDataQuality = () => request.get('/lifecycle/data-quality')
+export const getQualityIssues = (params) => request.get('/lifecycle/quality-issues', { params })
+export const actionQualityIssue = (id, action, data = {}) => request.post(`/lifecycle/quality-issues/${id}/action`, null, { params: { action, ...data } })
 export const getAbnormalAssets = (params) => request.get('/lifecycle/abnormal-assets', { params })
 export const cleanAsset = (id, field, value, reason) => request.post(`/lifecycle/asset/${id}/clean`, null, { params: { field, value, reason } })
 

@@ -29,6 +29,23 @@ class AiDataClean(Base):
     status = Column(SmallInteger, default=1, comment="1生效0撤销")
 
 
+class AiQualityIssue(Base):
+    __tablename__ = "ai_quality_issue"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    asset_id = Column(Integer, nullable=False, index=True)
+    issue_type = Column(String(32), nullable=False)
+    issue_title = Column(String(128), nullable=False)
+    status = Column(String(16), nullable=False, default="open", index=True)
+    assignee = Column(String(64))
+    due_date = Column(Date)
+    fix_remark = Column(String(512))
+    created_by = Column(String(64), default="system")
+    created_at = Column(DateTime, nullable=False)
+    updated_at = Column(DateTime, nullable=False)
+    verified_by = Column(String(64))
+    verified_at = Column(DateTime)
+
+
 class AiNlQueryLog(Base):
     __tablename__ = "ai_nl_query_log"
     id = Column(Integer, primary_key=True, autoincrement=True)
