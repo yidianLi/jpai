@@ -59,6 +59,7 @@
         <el-table-column prop="idle_saving_amount" label="利旧金额" width="120" />
         <el-table-column prop="check_anomaly_rate" label="盘点异常率" width="120"><template #default="{ row }">{{ row.check_anomaly_rate }}%</template></el-table-column>
         <el-table-column prop="warning_response_rate" label="预警响应率"><template #default="{ row }">{{ row.warning_response_rate }}%</template></el-table-column>
+        <el-table-column prop="scrap_compliance_rate" label="报废合规率"><template #default="{ row }">{{ row.scrap_compliance_rate }}%</template></el-table-column>
       </el-table>
     </div>
     <el-row :gutter="16" style="margin-top: 16px;">

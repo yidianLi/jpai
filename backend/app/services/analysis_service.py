@@ -4,7 +4,7 @@ from sqlalchemy import func, case, and_, or_
 from ..database import AiSessionLocal
 from ..models.asset import AiAsset, AiAssetTransfer, AiCheckRecord
 from ..models.dict import AiDepartment, AiAssetClass, AiAssetState
-from ..models.warning import AiWarning, AiIdlePool
+from ..models.warning import AiWarning, AiIdlePool, AiScrapEvaluation
 
 
 class AnalysisService:
@@ -153,11 +153,20 @@ class AnalysisService:
             warning_done = self.db.query(func.count(AiWarning.id)).filter(
                 AiWarning.create_time >= current, AiWarning.create_time < next_month, AiWarning.status == 1
             ).scalar() or 0
+            evaluations = self.db.query(func.count(AiScrapEvaluation.id)).filter(
+                AiScrapEvaluation.eval_date >= current, AiScrapEvaluation.eval_date < next_month
+            ).scalar() or 0
+            compliant = self.db.query(func.count(AiScrapEvaluation.id)).filter(
+                AiScrapEvaluation.eval_date >= current, AiScrapEvaluation.eval_date < next_month,
+                AiScrapEvaluation.eval_result.in_([1, 2, 3])
+            ).scalar() or 0
             result.append({"month": current.strftime("%Y-%m"), "transfer_count": transfers,
                            "idle_saving_amount": round(float(savings), 2),
                            "check_anomaly_rate": round(anomalies / checks * 100, 1) if checks else 0,
                            "warning_response_rate": round(warning_done / warning_total * 100, 1) if warning_total else 0,
+                           "scrap_compliance_rate": round(compliant / evaluations * 100, 1) if evaluations else 0,
                            "metric_basis": {"idle_saving_amount": "transfer fee sum for inbound bill types; replace with validated saving ledger when available",
                                             "check_anomaly_rate": "check_state 2/3 divided by check_state 1/2/3",
-                                            "warning_response_rate": "handled status=1 divided by warnings created in month"}})
+                                            "warning_response_rate": "handled status=1 divided by warnings created in month",
+                                            "scrap_compliance_rate": "evaluations with explicit result 1/2/3 divided by evaluations in month"}})
         return {"months": result, "rules_version": "operations-v1", "generated_at": datetime.now().isoformat()}
