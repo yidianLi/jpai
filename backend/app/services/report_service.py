@@ -19,14 +19,15 @@ plt.rcParams['axes.unicode_minus'] = False
 
 
 class ReportService:
-    def __init__(self):
-        self.db = AiSessionLocal()
-        self.analysis = AnalysisService()
-        self.warning = WarningService()
-        self.idle = IdleService()
+    def __init__(self, db=None):
+        self.db = db or AiSessionLocal()
+        self._owns_db = db is None
+        self.analysis = AnalysisService(self.db)
+        self.warning = WarningService(self.db)
+        self.idle = IdleService(self.db)
 
     def close(self):
-        self.db.close()
+        if self._owns_db: self.db.close()
         self.analysis.close()
         self.warning.close()
         self.idle.close()

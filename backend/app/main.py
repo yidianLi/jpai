@@ -3,13 +3,16 @@ AI数智化资产管理系统 - 主入口
 支持信创环境部署
 """
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from sqlalchemy.exc import SQLAlchemyError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from .config import settings
 from .database import ai_engine, Base
 from .core.scheduler import start_scheduler
 from .core.migrations import run_migrations
+from .core.transactions import BusinessError
 from .api import dashboard, check, idle, lifecycle, scrap, query, system, auth, transfer, insight, procurement, orchestration, jobs
 
 
@@ -32,6 +35,14 @@ app = FastAPI(
     version=settings.APP_VERSION,
     lifespan=lifespan,
 )
+
+@app.exception_handler(BusinessError)
+async def business_error_handler(request: Request, exc: BusinessError):
+    return JSONResponse(status_code=exc.status_code, content={"code": exc.code, "message": exc.message})
+
+@app.exception_handler(SQLAlchemyError)
+async def database_error_handler(request: Request, exc: SQLAlchemyError):
+    return JSONResponse(status_code=500, content={"code": "DB_TRANSACTION_ERROR", "message": "database transaction failed"})
 
 app.add_middleware(
     CORSMiddleware,
