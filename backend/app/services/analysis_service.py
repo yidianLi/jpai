@@ -123,3 +123,41 @@ class AnalysisService:
         """获取部门人数（用于人均资产）"""
         rows = self.db.query(AiDepartment.dept_name, AiDepartment.headcount).all()
         return {r[0]: r[1] or 0 for r in rows}
+
+    def get_operational_effectiveness(self, months=12):
+        """Monthly operational outcomes with explicit metric definitions."""
+        months = min(max(int(months or 12), 1), 24)
+        end = date.today().replace(day=1)
+        result = []
+        for i in range(months - 1, -1, -1):
+            current = (end - timedelta(days=31 * i)).replace(day=1)
+            next_month = (current.replace(day=28) + timedelta(days=4)).replace(day=1)
+            transfers = self.db.query(func.count(AiAssetTransfer.id)).filter(
+                AiAssetTransfer.bill_date >= current, AiAssetTransfer.bill_date < next_month
+            ).scalar() or 0
+            savings = self.db.query(func.coalesce(func.sum(AiAssetTransfer.fee), 0)).filter(
+                AiAssetTransfer.bill_date >= current, AiAssetTransfer.bill_date < next_month,
+                AiAssetTransfer.bill_type.in_([10100, 10300])
+            ).scalar() or 0
+            checks = self.db.query(func.count(AiCheckRecord.id)).filter(
+                AiCheckRecord.check_date >= current, AiCheckRecord.check_date < next_month,
+                AiCheckRecord.check_state.in_([1, 2, 3])
+            ).scalar() or 0
+            anomalies = self.db.query(func.count(AiCheckRecord.id)).filter(
+                AiCheckRecord.check_date >= current, AiCheckRecord.check_date < next_month,
+                AiCheckRecord.check_state.in_([2, 3])
+            ).scalar() or 0
+            warning_total = self.db.query(func.count(AiWarning.id)).filter(
+                AiWarning.create_time >= current, AiWarning.create_time < next_month
+            ).scalar() or 0
+            warning_done = self.db.query(func.count(AiWarning.id)).filter(
+                AiWarning.create_time >= current, AiWarning.create_time < next_month, AiWarning.status == 1
+            ).scalar() or 0
+            result.append({"month": current.strftime("%Y-%m"), "transfer_count": transfers,
+                           "idle_saving_amount": round(float(savings), 2),
+                           "check_anomaly_rate": round(anomalies / checks * 100, 1) if checks else 0,
+                           "warning_response_rate": round(warning_done / warning_total * 100, 1) if warning_total else 0,
+                           "metric_basis": {"idle_saving_amount": "transfer fee sum for inbound bill types; replace with validated saving ledger when available",
+                                            "check_anomaly_rate": "check_state 2/3 divided by check_state 1/2/3",
+                                            "warning_response_rate": "handled status=1 divided by warnings created in month"}})
+        return {"months": result, "rules_version": "operations-v1", "generated_at": datetime.now().isoformat()}

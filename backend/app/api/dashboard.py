@@ -159,6 +159,14 @@ def report_list(type: str = None, page: int = 1, size: int = 20, user: AiUser = 
     svc.close()
     return data
 
+@router.get("/operational-effectiveness")
+def operational_effectiveness(months: int = 12, user: AiUser = Depends(get_current_user)):
+    svc = AnalysisService()
+    try:
+        return svc.get_operational_effectiveness(months)
+    finally:
+        svc.close()
+
 @router.get('/reports/id/{report_id}')
 def download_report_by_id(report_id: int, request: Request, db: Session = Depends(get_ai_db), user: AiUser = Depends(get_current_user)):
     report = db.query(AiReport).filter(AiReport.id == report_id).first()

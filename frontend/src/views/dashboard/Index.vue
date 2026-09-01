@@ -51,6 +51,16 @@
         <el-empty v-if="!actionItems.items.length" description="暂无待处理事项" :image-size="50" />
       </div>
     </div>
+    <div class="tech-card operations-panel">
+      <div class="card-title">运营效果</div>
+      <el-table :data="operationalMonths" size="small" max-height="220">
+        <el-table-column prop="month" label="月份" width="100" />
+        <el-table-column prop="transfer_count" label="调拨次数" width="100" />
+        <el-table-column prop="idle_saving_amount" label="利旧金额" width="120" />
+        <el-table-column prop="check_anomaly_rate" label="盘点异常率" width="120"><template #default="{ row }">{{ row.check_anomaly_rate }}%</template></el-table-column>
+        <el-table-column prop="warning_response_rate" label="预警响应率"><template #default="{ row }">{{ row.warning_response_rate }}%</template></el-table-column>
+      </el-table>
+    </div>
     <el-row :gutter="16" style="margin-top: 16px;">
       <el-col :span="8">
         <div class="tech-card">
@@ -116,7 +126,7 @@ import { ref, reactive, onMounted, nextTick, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
-import { getOverview, getActionItems, getClassDistribution, getStateDistribution, getMonthlyTrend, getDeptRanking, getWarnings, generateMonthlyReport, getReportJob, cancelReportJob, retryReportJob, getReports } from '@/api'
+import { getOverview, getActionItems, getClassDistribution, getStateDistribution, getMonthlyTrend, getOperationalEffectiveness, getDeptRanking, getWarnings, generateMonthlyReport, getReportJob, cancelReportJob, retryReportJob, getReports } from '@/api'
 
 const overview = ref({})
 const classChart = ref()
@@ -125,6 +135,7 @@ const trendChart = ref()
 const deptRanking = ref([])
 const warnings = reactive({ list: [], total: 0 })
 const actionItems = reactive({ total: 0, high_count: 0, estimated_saving: 0, items: [] })
+const operationalMonths = ref([])
   const reportMonth = ref('')
 const genLoading = ref(false)
 const reports = ref([])
@@ -158,6 +169,8 @@ const loadData = async () => {
   const cls = await getClassDistribution()
   const states = await getStateDistribution()
   const trend = await getMonthlyTrend(12)
+  const operational = await getOperationalEffectiveness(12)
+  operationalMonths.value = operational.months || []
   deptRanking.value = await getDeptRanking()
 
   await nextTick()
@@ -250,6 +263,7 @@ watch(isReportView, loadView)
 <style scoped>
 .metric-row { margin-bottom: 0; }
 .action-panel { margin-top: 16px; }
+.operations-panel { margin-top: 16px; }
 .action-title { display:flex; justify-content:space-between; align-items:center; }
 .action-summary { color:#718198; font-size:12px; font-weight:400; }
 .action-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 24px; }
