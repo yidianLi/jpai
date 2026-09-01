@@ -20,7 +20,7 @@
           <span class="result-count">共 {{ total }} 条资产</span>
         </el-space>
       </div>
-      <el-table :data="list" v-loading="loading" size="small" width="100%" max-height="500" fit class="idle-table" empty-text="当前筛选下暂无闲置资产">
+      <DataState :loading="loading" :error="error" :empty="!list.length" empty-text="当前筛选下暂无闲置资产" @retry="loadList"><template #default><el-table :data="list" size="small" width="100%" max-height="500" fit class="idle-table">
         <el-table-column prop="barcode" label="资产编号" width="180" show-overflow-tooltip />
         <el-table-column prop="asset_name" label="资产名称" width="185" show-overflow-tooltip />
         <el-table-column prop="model" label="型号" min-width="255" show-overflow-tooltip />
@@ -43,7 +43,7 @@
             <el-button type="primary" link size="small" @click="transfer(row)">标记调拨</el-button>
           </template>
         </el-table-column>
-      </el-table>
+      </el-table></template></DataState>
       <el-pagination style="margin-top:12px;justify-content:flex-end;display:flex;" background layout="total, prev, pager, next" :total="total" :page-size="20" :current-page="page" @current-change="p => {page=p;loadList()}" />
     </div>
   </div>
@@ -54,6 +54,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getIdlePool, getIdleStats, refreshIdle } from '@/api'
+import DataState from '@/components/DataState.vue'
 const router = useRouter()
 
 const list = ref([])
@@ -63,11 +64,12 @@ const page = ref(1)
 const searchDept = ref('')
 const minDays = ref(null)
 const loading = ref(false)
+const error = ref(false)
 const formatAmount = (_, __, value) => value == null ? '-' : Number(value).toLocaleString('zh-CN', { maximumFractionDigits: 2 })
 
 const loadList = async () => {
-  loading.value = true
-  try { const res = await getIdlePool({ dept: searchDept.value || undefined, min_days: minDays.value || undefined, page: page.value, size: 20 }); list.value = res.list; total.value = res.total } finally { loading.value = false }
+  loading.value = true; error.value = false
+  try { const res = await getIdlePool({ dept: searchDept.value || undefined, min_days: minDays.value || undefined, page: page.value, size: 20 }); list.value = res.list; total.value = res.total } catch { error.value=true; list.value=[]; total.value=0 } finally { loading.value = false }
 }
 const loadStats = async () => { stats.value = await getIdleStats() }
 const refresh = async () => {
