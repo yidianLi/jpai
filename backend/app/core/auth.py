@@ -29,6 +29,10 @@ def verify_password(plain: str, hashed: str) -> bool:
         return False
 
 
+def needs_password_upgrade(hashed: str) -> bool:
+    return bool(hashed and len(hashed) == 32 and all(c in '0123456789abcdefABCDEF' for c in hashed))
+
+
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 

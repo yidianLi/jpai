@@ -1,5 +1,5 @@
 """领导驾驶舱接口"""
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from fastapi.responses import FileResponse
 from pathlib import Path
@@ -16,6 +16,7 @@ from ..models.transfer import AiTransferSuggestion
 from ..models.warning import AiWarning
 from ..services.lifecycle_service import LifecycleService
 from ..core.data_scope import apply_data_scope
+from ..core.audit import record as record_audit
 
 router = APIRouter()
 
@@ -159,7 +160,7 @@ def report_list(type: str = None, page: int = 1, size: int = 20, user: AiUser = 
     return data
 
 @router.get('/reports/id/{report_id}')
-def download_report_by_id(report_id: int, db: Session = Depends(get_ai_db), user: AiUser = Depends(get_current_user)):
+def download_report_by_id(report_id: int, request: Request, db: Session = Depends(get_ai_db), user: AiUser = Depends(get_current_user)):
     report = db.query(AiReport).filter(AiReport.id == report_id).first()
     if not report or (user.is_admin != 1 and report.create_user != user.user_name):
         raise HTTPException(404, '鎶ュ憡涓嶅瓨鍦ㄦ垨鏃犳潈璁块棶')
@@ -169,6 +170,8 @@ def download_report_by_id(report_id: int, db: Session = Depends(get_ai_db), user
         raise HTTPException(404, 'report file not found')
     if path.stat().st_size > 20 * 1024 * 1024:
         raise HTTPException(413, '鎶ュ憡鏂囦欢瓒呭嚭澶у皬闄愬埗')
+    record_audit(db, user, "report.download", f"report:{report_id}", after={"filename": safe_name}, request=request)
+    db.commit()
     return FileResponse(path, filename=safe_name, media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
 
 @router.get('/reports/{filename}')

@@ -8,8 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from .config import settings
 from .database import ai_engine, Base
-from .models.procurement import AiProcurementSuggestion
 from .core.scheduler import start_scheduler
+from .core.migrations import run_migrations
 from .api import dashboard, check, idle, lifecycle, scrap, query, system, auth, transfer, insight, procurement, orchestration
 
 
@@ -19,12 +19,8 @@ async def lifespan(app: FastAPI):
     # Avoid blocking the server on every restart when the database is unavailable.
     if settings.CREATE_TABLES_ON_STARTUP:
         Base.metadata.create_all(bind=ai_engine)
-    # Procurement suggestions may be deployed independently of the full migration bundle.
-    try:
-        AiProcurementSuggestion.__table__.create(bind=ai_engine, checkfirst=True)
-    except Exception:
-        # Keep service startup independent from an unavailable optional write database.
-        pass
+    if settings.ENVIRONMENT.lower() in {"production", "prod"}:
+        run_migrations(ai_engine, settings.MIGRATIONS_DIR)
     if settings.SYNC_ENABLED:
         start_scheduler()
     yield

@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from ..database import get_ai_db
 from ..models.dict import AiUser
-from ..core.auth import create_access_token, get_current_user, verify_password, get_password_hash
+from ..core.auth import create_access_token, get_current_user, verify_password, get_password_hash, needs_password_upgrade
 from ..config import settings
 
 router = APIRouter()
@@ -18,6 +18,9 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         raise HTTPException(status_code=401, detail="用户名或密码错误")
     if not verify_password(form_data.password, user.password or ""):
         raise HTTPException(status_code=401, detail="用户名或密码错误")
+    if needs_password_upgrade(user.password or ""):
+        user.password = get_password_hash(form_data.password)
+        db.commit()
     if user.state != 1:
         raise HTTPException(status_code=403, detail="账号已停用")
     token = create_access_token(

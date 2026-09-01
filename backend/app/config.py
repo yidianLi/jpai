@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     AI_DB_HOST: str = "127.0.0.1"
     AI_DB_PORT: int = 3306
     AI_DB_USER: str = "root"
-    AI_DB_PASSWORD: str = "aiasset2026"
+    AI_DB_PASSWORD: str = ""
     AI_DB_NAME: str = "ai_asset_db"
 
     SOURCE_DB_HOST: str = "127.0.0.1"
@@ -35,9 +35,11 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o-mini"
 
-    SECRET_KEY: str = "ai-asset-mgmt-secret-2026"
+    SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
+    ENVIRONMENT: str = "development"
+    MIGRATIONS_DIR: str = "sql/migrations"
 
     SYNC_HOUR: int = 2
     SYNC_ENABLED: bool = True
@@ -51,3 +53,9 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+if settings.ENVIRONMENT.lower() in {"production", "prod"}:
+    if not settings.SECRET_KEY or len(settings.SECRET_KEY) < 32:
+        raise RuntimeError("SECRET_KEY must be configured with at least 32 characters in production")
+    if not settings.AI_DB_PASSWORD:
+        raise RuntimeError("AI_DB_PASSWORD must be configured in production")

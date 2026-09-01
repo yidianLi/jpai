@@ -7,6 +7,8 @@ import json
 import logging
 import httpx
 import os
+from urllib.parse import urlparse
+import ipaddress
 from ..config import settings
 from ..database import AiSessionLocal
 from ..models.report import AiConfig
@@ -28,6 +30,27 @@ class LLMService:
             self.api_key = ""
             self.model = runtime_config["model"]
         self.last_error = ""
+        self._validate_endpoint()
+
+    def _validate_endpoint(self):
+        parsed = urlparse(self.base_url)
+        if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+            self.enabled = False
+            self.last_error = "invalid AI endpoint"
+            return
+        if self.provider == "openai" and parsed.scheme != "https":
+            self.enabled = False
+            self.last_error = "online AI endpoint must use HTTPS"
+            return
+        try:
+            address = ipaddress.ip_address(parsed.hostname)
+            if self.provider == "openai" and (address.is_private or address.is_loopback or address.is_link_local):
+                self.enabled = False
+                self.last_error = "private AI endpoint is not allowed"
+        except ValueError:
+            if self.provider == "openai" and parsed.hostname in {"localhost", "host.docker.internal"}:
+                self.enabled = False
+                self.last_error = "local AI endpoint is not allowed for online provider"
 
     @staticmethod
     def _load_runtime_config():
