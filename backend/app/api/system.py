@@ -27,6 +27,17 @@ def list_audit_events(page: int = 1, size: int = 50, db: Session = Depends(get_a
         for row in rows
     ]}
 
+@router.get("/performance/explain")
+def explain_asset_query(db: Session = Depends(get_ai_db), user: AiUser = Depends(require_admin)):
+    from sqlalchemy import text
+    statement = text("EXPLAIN SELECT asset_id FROM ai_asset WHERE company_id = :company_id AND dept_id = :dept_id AND state_id IS NOT NULL AND is_idle = :is_idle ORDER BY asset_id DESC LIMIT 200")
+    try:
+        rows = db.execute(statement, {"company_id": user.company_id or 0, "dept_id": user.dept_id or 0, "is_idle": 1}).mappings().all()
+        return {"query": "asset_scope_state_idle", "plan": [dict(row) for row in rows]}
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(503, f"EXPLAIN unavailable: {exc}")
+
 
 class AiRuntimeConfig(BaseModel):
     enabled: bool = True

@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     CREATE_TABLES_ON_STARTUP: bool = False
     API_PREFIX: str = "/api"
     CORS_ORIGINS: str = "http://localhost:8080,http://127.0.0.1:8080"
+    REDIS_URL: str = ""
 
     AI_DB_HOST: str = "127.0.0.1"
     AI_DB_PORT: int = 3306

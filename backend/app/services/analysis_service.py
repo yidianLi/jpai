@@ -5,16 +5,25 @@ from ..database import AiSessionLocal
 from ..models.asset import AiAsset, AiAssetTransfer, AiCheckRecord
 from ..models.dict import AiDepartment, AiAssetClass, AiAssetState
 from ..models.warning import AiWarning, AiIdlePool, AiScrapEvaluation
+from ..core.cache import get as cache_get, set as cache_set
 
 
 class AnalysisService:
-    def __init__(self):
-        self.db = AiSessionLocal()
+    def __init__(self, db=None):
+        self.db = db or AiSessionLocal()
+        self._owns_db = db is None
 
     def close(self):
-        self.db.close()
+        if self._owns_db: self.db.close()
 
     def get_overview(self):
+        cached = cache_get("metrics:overview:v1")
+        if cached: return cached
+        result = self._get_overview()
+        cache_set("metrics:overview:v1", result, 30)
+        return result
+
+    def _get_overview(self):
         """资产总览指标"""
         # 原系统在用状态：10400在用、10610内调、10640外调、10670个调、10680变更、11400(默认在用)
         IN_USE_STATES = [10400, 10610, 10640, 10670, 10680, 11400, 11410]
