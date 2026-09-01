@@ -160,10 +160,12 @@ def report_list(type: str = None, page: int = 1, size: int = 20, user: AiUser = 
     return data
 
 @router.get("/operational-effectiveness")
-def operational_effectiveness(months: int = 12, user: AiUser = Depends(get_current_user)):
+def operational_effectiveness(months: int = 12, dept_id: int = None, user: AiUser = Depends(get_current_user)):
+    if months < 1 or months > 24 or (dept_id is not None and dept_id < 1):
+        raise HTTPException(422, "months must be between 1 and 24 and dept_id must be positive")
     svc = AnalysisService()
     try:
-        return svc.get_operational_effectiveness(months)
+        return svc.get_operational_effectiveness(months, dept_id)
     finally:
         svc.close()
 
