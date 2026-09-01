@@ -43,6 +43,17 @@ def list_notifications(user=Depends(require_admin)):
     from ..core.notifications import recent_notifications
     return recent_notifications()
 
+@router.get("/jobs/{job_id}")
+def job_status(job_id: str, user=Depends(require_admin)):
+    """返回指定作业的最近一次状态，供前端轮询。"""
+    from ..core.notifications import recent_notifications
+    events = [event for event in recent_notifications() if event.get("job_id") == job_id]
+    if not events:
+        raise HTTPException(404, "作业不存在")
+    latest = events[-1]
+    return {"job_id": job_id, "status": latest.get("status"), "result": latest.get("result"),
+            "error": latest.get("error", ""), "updated_at": latest.get("created_at"), "events": events}
+
 
 @router.post("/run")
 def run_workflow(user=Depends(require_admin)):
