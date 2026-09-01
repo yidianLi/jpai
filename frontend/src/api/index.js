@@ -11,6 +11,7 @@ export const getClassDistribution = () => request.get('/dashboard/class-distribu
 export const getStateDistribution = () => request.get('/dashboard/state-distribution')
 export const getMonthlyTrend = (months = 12) => request.get('/dashboard/monthly-trend', { params: { months } })
 export const getOperationalEffectiveness = (months = 12, deptId) => request.get('/dashboard/operational-effectiveness', { params: { months, dept_id: deptId } })
+export const getAuditEvents = (params) => request.get('/system/audit-events', { params })
 export const getDeptRanking = () => request.get('/dashboard/dept-ranking')
 export const getWarnings = (params) => request.get('/dashboard/warnings', { params })
 export const handleWarning = (id, status, remark) => request.post(`/dashboard/warnings/${id}/handle`, null, { params: { status, remark } })
