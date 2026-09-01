@@ -9,6 +9,7 @@ from ..models.audit import AiAuditEvent
 from ..core.auth import get_current_user, require_admin
 from ..services.sync_service import SyncService
 from ..core.audit import record as record_audit
+from ..core.data_scope import has_permission
 
 router = APIRouter()
 
@@ -61,7 +62,11 @@ def sync_assets(user: AiUser = Depends(require_admin)):
 
 @router.get("/departments")
 def list_departments(db: Session = Depends(get_ai_db), user: AiUser = Depends(get_current_user)):
-    rows = db.query(AiDepartment).all()
+    query = db.query(AiDepartment)
+    if not has_permission(user, "dictionary.read.all"):
+        if user.company_id: query = query.filter(AiDepartment.company_id == user.company_id)
+        if user.dept_id: query = query.filter(AiDepartment.dept_id == user.dept_id)
+    rows = query.all()
     return [{"dept_id": r.dept_id, "dept_name": r.dept_name, "company_id": r.company_id,
              "headcount": r.headcount, "headcount_source": "同步用户（在职）" if r.headcount else "未配置", "parent_id": r.parent_id} for r in rows]
 
@@ -78,7 +83,10 @@ def update_headcount(dept_id: int, headcount: int, db: Session = Depends(get_ai_
 
 @router.get("/companies")
 def list_companies(db: Session = Depends(get_ai_db), user: AiUser = Depends(get_current_user)):
-    rows = db.query(AiCompany).all()
+    query = db.query(AiCompany)
+    if not has_permission(user, "dictionary.read.all") and user.company_id:
+        query = query.filter(AiCompany.company_id == user.company_id)
+    rows = query.all()
     return [{"company_id": r.company_id, "company_name": r.company_name, "parent_id": r.parent_id} for r in rows]
 
 
