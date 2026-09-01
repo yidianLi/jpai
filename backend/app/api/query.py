@@ -128,7 +128,7 @@ async def nl_query(payload: dict = Body(default=None), query: Optional[str] = No
         classes = [c.class_name for c in db.query(AiAssetClass).filter(AiAssetClass.is_lowest == 1).limit(50).all()]
         depts = [d.dept_name for d in db.query(AiDepartment).limit(30).all()]
         states = [s.state_name for s in db.query(AiAssetState).limit(20).all()]
-        result = await llm.nl_query(query, {"classes": classes, "depts": depts, "states": states, "conversation": history})
+        result = await llm.nl_query(query, {"classes": classes, "depts": depts, "states": states, "conversation": history}, user.user_id)
 
         # 模型返回异常或格式不稳定时，仍为常用资产问法提供受控兜底。
         lowered = query.lower()

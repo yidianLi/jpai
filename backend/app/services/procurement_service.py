@@ -5,8 +5,9 @@ from ..core.data_scope import apply_data_scope
 
 
 class ProcurementService:
-    def __init__(self): self.db = AiSessionLocal()
-    def close(self): self.db.close()
+    def __init__(self, db=None): self.db = db or AiSessionLocal(); self._owns_db = db is None
+    def close(self):
+        if self._owns_db: self.db.close()
     def preview(self, user, class_id, quantity, dept_id=None):
         base = apply_data_scope(self.db.query(AiAsset), user)
         if class_id: base = base.filter(AiAsset.class_id == class_id)

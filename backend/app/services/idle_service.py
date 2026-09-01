@@ -8,11 +8,11 @@ from ..config import settings
 
 
 class IdleService:
-    def __init__(self):
-        self.db = AiSessionLocal()
+    def __init__(self, db=None):
+        self.db = db or AiSessionLocal(); self._owns_db = db is None
 
     def close(self):
-        self.db.close()
+        if self._owns_db: self.db.close()
 
     def refresh_idle_pool(self):
         """刷新闲置资产池：状态=归还回库(10500)且变更日期超过阈值"""

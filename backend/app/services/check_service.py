@@ -6,11 +6,11 @@ from ..models.asset import AiAsset, AiCheckRecord
 
 
 class CheckService:
-    def __init__(self):
-        self.db = AiSessionLocal()
+    def __init__(self, db=None):
+        self.db = db or AiSessionLocal(); self._owns_db = db is None
 
     def close(self):
-        self.db.close()
+        if self._owns_db: self.db.close()
 
     def get_check_tasks(self):
         """获取盘点任务列表"""

@@ -8,11 +8,11 @@ from ..config import settings
 
 
 class ScrapService:
-    def __init__(self):
-        self.db = AiSessionLocal()
+    def __init__(self, db=None):
+        self.db = db or AiSessionLocal(); self._owns_db = db is None
 
     def close(self):
-        self.db.close()
+        if self._owns_db: self.db.close()
 
     def evaluate_asset(self, asset_id):
         """对单台资产进行报废评估"""

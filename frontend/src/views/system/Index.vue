@@ -62,6 +62,25 @@
             </template>
             <el-form-item><el-button type="primary" :loading="aiSaving" @click="saveAiConfig">保存并生效</el-button><span v-if="aiConfig.api_key_configured" class="key-status">API Key 已保存</span></el-form-item>
           </el-form>
+          <el-divider content-position="left">近 30 天 AI 治理</el-divider>
+          <div class="usage-grid" v-loading="usageLoading">
+            <el-statistic title="调用次数" :value="aiUsage.total || 0" />
+            <el-statistic title="失败次数" :value="aiUsage.failed || 0" />
+            <el-statistic title="治理拦截" :value="aiUsage.blocked || 0" />
+            <el-statistic title="Token 用量" :value="(aiUsage.input_tokens || 0) + (aiUsage.output_tokens || 0)" />
+            <el-statistic title="估算成本" :value="aiUsage.cost || 0" :precision="6" prefix="$" />
+          </div>
+          <div class="card-title audit-title">最近调用审计</div>
+          <el-table :data="usageLogs" size="small" v-loading="usageLoading" empty-text="暂无调用记录">
+            <el-table-column prop="created_at" label="时间" min-width="170" />
+            <el-table-column prop="operation" label="调用场景" min-width="150" />
+            <el-table-column prop="provider" label="服务" width="100" />
+            <el-table-column prop="status" label="结果" width="100" />
+            <el-table-column prop="input_tokens" label="输入 Token" width="110" />
+            <el-table-column prop="output_tokens" label="输出 Token" width="110" />
+            <el-table-column prop="latency_ms" label="耗时(ms)" width="100" />
+            <el-table-column prop="request_id" label="请求 ID" min-width="210" show-overflow-tooltip />
+          </el-table>
         </div>
       </el-tab-pane>
     </el-tabs>
@@ -71,7 +90,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { syncAll, syncDict, syncAssets, getDepartments, updateHeadcount, getLlmHealth, getAiConfig, updateAiConfig } from '@/api'
+import { syncAll, syncDict, syncAssets, getDepartments, updateHeadcount, getLlmHealth, getAiConfig, updateAiConfig, getAiUsage, getAiUsageLogs } from '@/api'
 
 const activeTab = ref('sync')
 const syncLoading = ref(false)
@@ -80,6 +99,9 @@ const llmHealth = ref({})
 const config = reactive({ idle_days: 90, residual_rate: 0.05, expire_red: 90, expire_yellow: 180 })
 const aiSaving = ref(false)
 const aiConfig = reactive({ enabled: true, provider: 'openai', base_url: '', model: '', api_key: '', api_key_configured: false })
+const usageLoading = ref(false)
+const aiUsage = ref({})
+const usageLogs = ref([])
 
 const doSync = async (type) => {
   syncLoading.value = true
@@ -102,6 +124,14 @@ const loadLlmHealth = async () => {
 }
 const saveConfig = () => { ElMessage.success('配置已保存（演示）') }
 const loadAiConfig = async () => { Object.assign(aiConfig, await getAiConfig()) }
+const loadAiUsage = async () => {
+  usageLoading.value = true
+  try {
+    const [summary, logs] = await Promise.all([getAiUsage(30), getAiUsageLogs({ page: 1, size: 20 })])
+    aiUsage.value = summary
+    usageLogs.value = logs.list || []
+  } finally { usageLoading.value = false }
+}
 const saveAiConfig = async () => {
   aiSaving.value = true
   try {
@@ -112,7 +142,7 @@ const saveAiConfig = async () => {
     ElMessage.success('AI 配置已保存并生效')
   } finally { aiSaving.value = false }
 }
-onMounted(() => { loadDepts(); loadLlmHealth(); loadAiConfig() })
+onMounted(() => { loadDepts(); loadLlmHealth(); loadAiConfig(); loadAiUsage() })
 </script>
 
 <style scoped>
@@ -124,4 +154,7 @@ onMounted(() => { loadDepts(); loadLlmHealth(); loadAiConfig() })
 :deep(.el-descriptions__label) { background:#f5f8fb !important; color:#53657d !important; }
 :deep(.el-descriptions__content) { color:#20334d !important; }
 .key-status { margin-left:12px; color:#198f6b; font-size:13px; }
+.usage-grid { display:grid; grid-template-columns:repeat(5, minmax(120px, 1fr)); gap:20px; padding:8px 0 24px; }
+.audit-title { margin-top:8px; }
+@media (max-width: 900px) { .usage-grid { grid-template-columns:repeat(2, minmax(120px, 1fr)); } }
 </style>

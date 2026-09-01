@@ -9,9 +9,15 @@ import httpx
 import os
 from urllib.parse import urlparse
 import ipaddress
+import asyncio
+import time
+from datetime import datetime
 from ..config import settings
 from ..database import AiSessionLocal
 from ..models.report import AiConfig
+from ..models.ai_governance import AiUsageLog
+from ..core.ai_governance import redact, outbound_payload, allow, before_call, mark_success, mark_failure, RateLimitExceeded, CircuitOpen
+from ..core.request_context import request_id_var
 
 logger = logging.getLogger(__name__)
 
@@ -76,45 +82,67 @@ class LLMService:
             "api_key": env_key or settings.OPENAI_API_KEY or values.get("ai_api_key", ""),
             "model": env_model or (settings.OPENAI_MODEL if provider == "openai" else settings.OLLAMA_MODEL) or values.get("ai_model", ""),
         }
-    async def chat(self, prompt: str, system_prompt: str = None, temperature: float = 0.3) -> str:
+    async def chat(self, prompt: str, system_prompt: str = None, temperature: float = 0.3, operation: str = "chat", user_id: int = None) -> str:
         """调用大模型（自动适配本地/线上）"""
+        started = time.monotonic(); safe_prompt = redact(prompt, max_chars=settings.AI_INPUT_MAX_CHARS)
         if not self.enabled:
+            self._record_usage(user_id, operation, "skipped", 0, 0, "AI_DISABLED", safe_prompt, started)
             return ""
         if self.provider == "openai" and not self.api_key:
             logger.warning("OpenAI API Key未配置，LLM功能降级")
+            self._record_usage(user_id, operation, "skipped", 0, 0, "API_KEY_MISSING", safe_prompt, started)
             return ""
         try:
-            messages = []
-            if system_prompt:
-                messages.append({"role": "system", "content": system_prompt})
-            messages.append({"role": "user", "content": prompt})
-
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                if self.provider == "openai":
-                    resp = await client.post(
-                        f"{self.base_url}/chat/completions",
-                        headers={"Authorization": f"Bearer {self.api_key}"},
-                        json={"model": self.model, "messages": messages,
-                              "temperature": temperature, "stream": False}
-                    )
-                    resp.raise_for_status()
-                    data = resp.json()
-                    return data.get("choices", [{}])[0].get("message", {}).get("content", "")
-                else:
-                    resp = await client.post(
-                        f"{self.base_url}/api/chat",
-                        json={"model": self.model, "messages": messages,
-                              "stream": False, "options": {"temperature": temperature}}
-                    )
-                    resp.raise_for_status()
-                    data = resp.json()
-                    return data.get("message", {}).get("content", "")
+            allow(f"{self.provider}:{user_id or 'system'}", settings.AI_RATE_LIMIT_PER_MINUTE)
+            before_call(self.provider, settings.AI_CIRCUIT_FAILURE_THRESHOLD, settings.AI_CIRCUIT_RECOVERY_SECONDS)
+            messages = ([{"role": "system", "content": redact(system_prompt, max_chars=settings.AI_INPUT_MAX_CHARS)}] if system_prompt else [])
+            messages.append({"role": "user", "content": safe_prompt})
+            data = None
+            for attempt in range(max(0, settings.AI_MAX_RETRIES) + 1):
+                try:
+                    async with httpx.AsyncClient(timeout=60.0) as client:
+                        if self.provider == "openai":
+                            resp = await client.post(f"{self.base_url}/chat/completions", headers={"Authorization": f"Bearer {self.api_key}"}, json={"model": self.model, "messages": messages, "temperature": temperature, "stream": False})
+                        else:
+                            resp = await client.post(f"{self.base_url}/api/chat", json={"model": self.model, "messages": messages, "stream": False, "options": {"temperature": temperature}})
+                        resp.raise_for_status(); data = resp.json(); break
+                except Exception:
+                    if attempt >= settings.AI_MAX_RETRIES: raise
+                    await asyncio.sleep(0.2 * (2 ** attempt))
+            mark_success(self.provider)
+            content = data.get("choices", [{}])[0].get("message", {}).get("content", "") if self.provider == "openai" else data.get("message", {}).get("content", "")
+            usage = data.get("usage", {}) or {}
+            inp = int(usage.get("prompt_tokens", data.get("prompt_eval_count", 0)) or 0) or max(1, len(safe_prompt) // 4)
+            out = int(usage.get("completion_tokens", data.get("eval_count", 0)) or 0) or max(1, len(content) // 4)
+            self._record_usage(user_id, operation, "success", inp, out, None, safe_prompt, started)
+            return content
+        except (RateLimitExceeded, CircuitOpen) as e:
+            self.last_error = str(e); self._record_usage(user_id, operation, "blocked", 0, 0, type(e).__name__, safe_prompt, started); return ""
         except Exception as e:
             self.last_error = str(e)
+            mark_failure(self.provider, settings.AI_CIRCUIT_FAILURE_THRESHOLD, settings.AI_CIRCUIT_RECOVERY_SECONDS)
+            self._record_usage(user_id, operation, "failed", 0, 0, type(e).__name__, safe_prompt, started)
             logger.error(f"LLM调用失败({self.provider}): {e}")
             return ""
 
-    async def nl_query(self, user_query: str, context: dict) -> dict:
+    def _record_usage(self, user_id, operation, status, input_tokens, output_tokens, error_code, prompt, started):
+        db = None
+        try:
+            db = AiSessionLocal()
+            db.add(AiUsageLog(user_id=user_id, provider=self.provider, model=self.model, operation=operation, status=status,
+                              request_id=request_id_var.get(),
+                              input_tokens=input_tokens, output_tokens=output_tokens,
+                              cost=input_tokens / 1000 * settings.AI_COST_INPUT_PER_1K + output_tokens / 1000 * settings.AI_COST_OUTPUT_PER_1K,
+                              latency_ms=int((time.monotonic() - started) * 1000), error_code=error_code,
+                              redacted_input=prompt, created_at=datetime.now()))
+            db.commit()
+        except Exception as exc:
+            if db: db.rollback()
+            logger.warning("AI usage audit unavailable: %s", exc)
+        finally:
+            if db: db.close()
+
+    async def nl_query(self, user_query: str, context: dict, user_id: int = None) -> dict:
         """
         自然语言查询：意图识别 + 模板匹配（不直接生成SQL）
         返回匹配的查询模板和参数
@@ -130,8 +158,9 @@ class LLMService:
         请以JSON格式返回：{"intent": "查询类型", "filters": {"分类": "", "部门": "", "状态": "", "时间范围": ""}, "answer_hint": "回答要点"}
         只返回JSON，不要其他文字。"""
 
-        prompt = f"用户问题：{user_query}\n可用上下文：{json.dumps(context, ensure_ascii=False)}"
-        result = await self.chat(prompt, system)
+        safe = outbound_payload({"user_query": user_query, "classes": context.get("classes", []), "depts": context.get("depts", []), "states": context.get("states", []), "conversation": context.get("conversation", [])}, {"user_query", "classes", "depts", "states", "conversation"})
+        prompt = f"用户问题与允许外发的上下文：{json.dumps(safe, ensure_ascii=False)}"
+        result = await self.chat(prompt, system, operation="nl_query", user_id=user_id)
         try:
             start = result.find("{")
             end = result.rfind("}") + 1
@@ -148,14 +177,16 @@ class LLMService:
     async def polish_report(self, report_data: dict) -> str:
         """用大模型润色报告文字"""
         system = "你是机关单位公文写作助手，请根据数据生成简洁、正式、客观的分析文字，不要夸大，不要用感叹号。"
-        prompt = f"请根据以下固定资产数据生成一段分析文字（300字以内）：\n{json.dumps(report_data, ensure_ascii=False)}"
-        return await self.chat(prompt, system, temperature=0.5)
+        allowed = {"period", "asset_count", "asset_value", "idle_count", "idle_rate", "repair_count", "scrap_count", "department_summary", "class_summary"}
+        prompt = f"请根据以下固定资产数据生成一段分析文字（300字以内）：\n{json.dumps(outbound_payload(report_data, allowed), ensure_ascii=False)}"
+        return await self.chat(prompt, system, temperature=0.5, operation="report_polish")
 
     async def classify_asset(self, asset_info: str, standard_names: list) -> str:
         """资产名称智能归类"""
         system = "你是资产分类助手。根据资产描述，从给定的标准名称列表中选择最匹配的一项，只返回名称。"
-        prompt = f"资产描述：{asset_info}\n标准名称列表：{', '.join(standard_names[:50])}"
-        return await self.chat(prompt, system, temperature=0.1)
+        safe = outbound_payload({"asset_description": asset_info, "standard_names": standard_names[:50]}, {"asset_description", "standard_names"})
+        prompt = f"允许外发的分类信息：{json.dumps(safe, ensure_ascii=False)}"
+        return await self.chat(prompt, system, temperature=0.1, operation="asset_classify")
 
     def check_health(self) -> dict:
         """检查大模型服务状态"""

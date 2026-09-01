@@ -10,6 +10,13 @@ class Settings(BaseSettings):
     API_PREFIX: str = "/api"
     CORS_ORIGINS: str = "http://localhost:8080,http://127.0.0.1:8080"
     REDIS_URL: str = ""
+    AI_RATE_LIMIT_PER_MINUTE: int = 60
+    AI_MAX_RETRIES: int = 2
+    AI_CIRCUIT_FAILURE_THRESHOLD: int = 5
+    AI_CIRCUIT_RECOVERY_SECONDS: int = 30
+    AI_INPUT_MAX_CHARS: int = 12000
+    AI_COST_INPUT_PER_1K: float = 0.00015
+    AI_COST_OUTPUT_PER_1K: float = 0.0006
 
     AI_DB_HOST: str = "127.0.0.1"
     AI_DB_PORT: int = 3306

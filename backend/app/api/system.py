@@ -1,17 +1,48 @@
 """系统管理接口：数据同步、字典、部门人数维护、配置"""
 from fastapi import APIRouter, Depends, HTTPException, Request
+from datetime import datetime, timedelta
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from ..database import get_ai_db
 from ..models.dict import AiUser, AiDepartment, AiCompany, AiAssetClass, AiAssetState
 from ..models.report import AiConfig
 from ..models.audit import AiAuditEvent
+from ..models.ai_governance import AiUsageLog
+from sqlalchemy import func
 from ..core.auth import get_current_user, require_admin
 from ..services.sync_service import SyncService
 from ..core.audit import record as record_audit
 from ..core.data_scope import has_permission
 
 router = APIRouter()
+
+@router.get("/ai-usage")
+def ai_usage(days: int = 30, db: Session = Depends(get_ai_db), user: AiUser = Depends(require_admin)):
+    """AI调用量、失败率和成本汇总（管理员）。"""
+    days = min(max(days, 1), 365)
+    since = datetime.now() - timedelta(days=days)
+    q = db.query(AiUsageLog).filter(AiUsageLog.created_at >= since)
+    total = q.count(); failed = q.filter(AiUsageLog.status == "failed").count(); blocked = q.filter(AiUsageLog.status == "blocked").count()
+    summary = db.query(func.coalesce(func.sum(AiUsageLog.cost), 0), func.coalesce(func.sum(AiUsageLog.input_tokens), 0), func.coalesce(func.sum(AiUsageLog.output_tokens), 0)).filter(AiUsageLog.created_at >= since).first()
+    by_operation = db.query(AiUsageLog.operation, func.count(AiUsageLog.id), func.coalesce(func.sum(AiUsageLog.cost), 0)).filter(AiUsageLog.created_at >= since).group_by(AiUsageLog.operation).all()
+    return {"days": days, "total": total, "failed": failed, "blocked": blocked, "failure_rate": round(failed / total, 4) if total else 0,
+            "cost": float(summary[0] or 0), "input_tokens": int(summary[1] or 0), "output_tokens": int(summary[2] or 0),
+            "by_operation": [{"operation": op, "calls": n, "cost": float(cost or 0)} for op, n, cost in by_operation]}
+
+@router.get("/ai-usage/logs")
+def ai_usage_logs(page: int = 1, size: int = 50, operation: str = None, result: str = None,
+                  db: Session = Depends(get_ai_db), user: AiUser = Depends(require_admin)):
+    if page < 1 or size < 1 or size > 200: raise HTTPException(422, "invalid pagination")
+    query = db.query(AiUsageLog)
+    if operation: query = query.filter(AiUsageLog.operation == operation)
+    if result: query = query.filter(AiUsageLog.status == result)
+    total = query.count(); rows = query.order_by(AiUsageLog.created_at.desc(), AiUsageLog.id.desc()).offset((page - 1) * size).limit(size).all()
+    return {"total": total, "page": page, "size": size, "list": [
+        {"id": row.id, "user_id": row.user_id, "provider": row.provider, "model": row.model,
+         "operation": row.operation, "request_id": row.request_id, "status": row.status,
+         "input_tokens": row.input_tokens, "output_tokens": row.output_tokens, "cost": row.cost,
+         "latency_ms": row.latency_ms, "error_code": row.error_code,
+         "redacted_input": row.redacted_input, "created_at": row.created_at} for row in rows]}
 
 @router.get("/audit-events")
 def list_audit_events(page: int = 1, size: int = 50, db: Session = Depends(get_ai_db), user: AiUser = Depends(require_admin)):

@@ -13,6 +13,8 @@ from .database import ai_engine, Base
 from .core.scheduler import start_scheduler
 from .core.migrations import run_migrations
 from .core.transactions import BusinessError
+from .core.request_context import request_id_var
+from uuid import uuid4
 from .api import dashboard, check, idle, lifecycle, scrap, query, system, auth, transfer, insight, procurement, orchestration, jobs
 
 
@@ -35,6 +37,17 @@ app = FastAPI(
     version=settings.APP_VERSION,
     lifespan=lifespan,
 )
+
+@app.middleware("http")
+async def request_context(request: Request, call_next):
+    request_id = request.headers.get("x-request-id") or uuid4().hex
+    token = request_id_var.set(request_id)
+    try:
+        response = await call_next(request)
+        response.headers["x-request-id"] = request_id
+        return response
+    finally:
+        request_id_var.reset(token)
 
 @app.exception_handler(BusinessError)
 async def business_error_handler(request: Request, exc: BusinessError):

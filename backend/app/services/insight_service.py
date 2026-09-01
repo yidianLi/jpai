@@ -6,8 +6,9 @@ from ..core.data_scope import apply_data_scope
 
 
 class InsightService:
-    def __init__(self): self.db = AiSessionLocal()
-    def close(self): self.db.close()
+    def __init__(self, db=None): self.db = db or AiSessionLocal(); self._owns_db = db is None
+    def close(self):
+        if self._owns_db: self.db.close()
 
     def quality_metadata(self):
         cutoff = self.db.query(func.max(AiAsset.sync_time)).scalar()

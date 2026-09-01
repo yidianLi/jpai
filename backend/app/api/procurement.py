@@ -9,6 +9,7 @@ import json
 from datetime import datetime
 from ..models.procurement import AiProcurementSuggestion
 from ..core.audit import record as record_audit
+from ..core.ai_governance import outbound_payload
 
 router = APIRouter()
 
@@ -50,7 +51,8 @@ def confirm_suggestion(suggestion_id: int, request: Request, user: AiUser = Depe
 async def ai_preview(payload: AiPreviewRequest, user: AiUser = Depends(get_current_user)):
     request = payload.request.strip()
     llm = LLMService()
-    raw = await llm.chat(request, '请仅返回JSON：{"quantity":整数,"class_id":整数或null}。无法识别时quantity为1。')
+    safe = outbound_payload({"request": request}, {"request"})
+    raw = await llm.chat(json.dumps(safe, ensure_ascii=False), '请仅返回JSON：{"quantity":整数,"class_id":整数或null}。无法识别时quantity为1。', operation="procurement_preview", user_id=user.user_id)
     quantity, class_id = 1, None
     try:
         import json

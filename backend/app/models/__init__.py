@@ -6,3 +6,4 @@ from .transfer import AiTransferSuggestion, AiTransferAudit
 from .procurement import AiProcurementSuggestion
 from .audit import AiAuditEvent
 from .job import AiJob
+from .ai_governance import AiUsageLog
