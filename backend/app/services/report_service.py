@@ -48,8 +48,12 @@ class ReportService:
             "snapshot": {
                 "captured_at": snapshot_time,
                 "data_cutoff": overview.get("data_cutoff"),
+                "report_period": period,
+                "statistics_scope": "current asset state captured at data_cutoff",
+                "filters": {"data_scope": "current user authorization scope"},
                 "rules_version": "report-v1",
                 "ai_used": False,
+                "generated_by": user,
                 "metric_definitions": overview.get("metric_definitions", {}),
                 "source_tables": ["ai_asset", "ai_asset_transfer", "ai_warning", "ai_idle_pool"]
             }

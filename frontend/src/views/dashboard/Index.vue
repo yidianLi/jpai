@@ -9,6 +9,12 @@
           <el-button type="primary" @click="genReport" :loading="genLoading">生成月度报告</el-button>
         <el-button @click="loadReports">刷新记录</el-button>
       </el-space>
+        <div v-if="reportJob" class="report-job" :class="`report-job-${reportJob.status}`">
+          <span>任务状态：{{ reportJobStatus }}</span>
+          <el-button v-if="reportJob.status === 'queued'" link size="small" @click="cancelJob">取消</el-button>
+          <el-button v-if="['failed', 'cancelled'].includes(reportJob.status)" link type="primary" size="small" @click="retryJob">重试</el-button>
+          <span v-if="reportJob.error" class="report-job-error">{{ reportJob.error }}</span>
+        </div>
         <div class="report-hint">可生成当月及以前月份；报告统计使用当前资产数据快照。</div>
         <div class="report-hint">AI 状态：当前月报使用规则统计生成，未调用大模型润色。</div>
       <el-divider />
@@ -110,7 +116,7 @@ import { ref, reactive, onMounted, nextTick, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
-import { getOverview, getActionItems, getClassDistribution, getStateDistribution, getMonthlyTrend, getDeptRanking, getWarnings, generateMonthlyReport, getReports } from '@/api'
+import { getOverview, getActionItems, getClassDistribution, getStateDistribution, getMonthlyTrend, getDeptRanking, getWarnings, generateMonthlyReport, getReportJob, cancelReportJob, retryReportJob, getReports } from '@/api'
 
 const overview = ref({})
 const classChart = ref()
@@ -122,6 +128,8 @@ const actionItems = reactive({ total: 0, high_count: 0, estimated_saving: 0, ite
   const reportMonth = ref('')
 const genLoading = ref(false)
 const reports = ref([])
+const reportJob = ref(null)
+let reportJobTimer = null
 const route = useRoute()
 const router = useRouter()
   const isReportView = computed(() => route.meta.view === 'report')
@@ -192,11 +200,25 @@ const genReport = async () => {
   const [y, m] = reportMonth.value.split('-')
   genLoading.value = true
   try {
-    await generateMonthlyReport(parseInt(y), parseInt(m))
-    ElMessage.success('报告生成成功')
-    loadReports()
+    reportJob.value = await generateMonthlyReport(parseInt(y), parseInt(m))
+    pollReportJob()
   } finally { genLoading.value = false }
 }
+
+const reportJobStatus = computed(() => ({ queued: '排队中', running: '生成中', succeeded: '已完成', failed: '失败', cancelled: '已取消' })[reportJob.value?.status] || '-')
+const clearReportJobTimer = () => { if (reportJobTimer) { clearTimeout(reportJobTimer); reportJobTimer = null } }
+const pollReportJob = async () => {
+  clearReportJobTimer()
+  if (!reportJob.value?.job_id) return
+  try {
+    reportJob.value = await getReportJob(reportJob.value.job_id)
+    if (reportJob.value.status === 'succeeded') { ElMessage.success('报告生成成功'); loadReports(); return }
+    if (['failed', 'cancelled'].includes(reportJob.value.status)) return
+    reportJobTimer = setTimeout(pollReportJob, 1200)
+  } catch (error) { ElMessage.error('获取报告任务状态失败') }
+}
+const cancelJob = async () => { reportJob.value = await cancelReportJob(reportJob.value.job_id); clearReportJobTimer() }
+const retryJob = async () => { reportJob.value = await retryReportJob(reportJob.value.job_id); pollReportJob() }
 
 const loadReports = async () => {
   const res = await getReports({ size: 10 })
@@ -218,7 +240,7 @@ const loadReports = async () => {
 const loadActionItems = async () => Object.assign(actionItems, await getActionItems())
 const goAction = item => router.push(item.link)
 const loadView = () => {
-  if (isReportView.value) loadReports()
+  if (isReportView.value) { loadReports(); if (reportJob.value && !['succeeded', 'failed', 'cancelled'].includes(reportJob.value.status)) pollReportJob() }
   else { loadData(); loadWarnings(); loadActionItems() }
 }
 onMounted(loadView)
@@ -235,7 +257,7 @@ watch(isReportView, loadView)
 .action-dot { width:8px; height:8px; flex:0 0 8px; border-radius:50%; background:#1769aa; }.action-dot.high { background:#c84b54; }.action-dot.medium { background:#c98516; }
 .action-text { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#354965; font-size:13px; }.action-amount { color:#198f6b; font-size:12px; white-space:nowrap; }
 .card-title { font-size: 16px; font-weight: 650; color: #20334d; margin-bottom: 12px; border-left: 3px solid #1769aa; padding-left: 10px; }
-  .page-description { margin: 0 0 18px; color: #718198; font-size: 13px; }.report-panel { max-width: 980px; }.report-hint { margin-top: 8px; color: #8795a8; font-size: 12px; }
+  .page-description { margin: 0 0 18px; color: #718198; font-size: 13px; }.report-panel { max-width: 980px; }.report-hint { margin-top: 8px; color: #8795a8; font-size: 12px; }.report-job { display:flex; align-items:center; gap:8px; margin-top:10px; font-size:12px; color:#718198; }.report-job-running { color:#1769aa; }.report-job-failed { color:#c84b54; }.report-job-error { max-width:420px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .metric-sub { font-size: 12px; margin-top: 4px; }
 .text-yellow { color: #b7791f; }.text-red { color: #c84b54; }
 .warning-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #e8eef5; }.dot-red { width: 8px; height: 8px; border-radius: 50%; background: #c84b54; }.dot-yellow { width: 8px; height: 8px; border-radius: 50%; background: #d99a23; }.dot-blue { width: 8px; height: 8px; border-radius: 50%; background: #1769aa; }.warning-text { flex: 1; font-size: 13px; color: #354965; }.warning-date { font-size: 12px; color: #718198; }

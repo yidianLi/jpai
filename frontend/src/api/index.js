@@ -14,6 +14,9 @@ export const getDeptRanking = () => request.get('/dashboard/dept-ranking')
 export const getWarnings = (params) => request.get('/dashboard/warnings', { params })
 export const handleWarning = (id, status, remark) => request.post(`/dashboard/warnings/${id}/handle`, null, { params: { status, remark } })
 export const generateMonthlyReport = (year, month) => request.post('/dashboard/report/generate-monthly', null, { params: { year, month } })
+export const getReportJob = (jobId) => request.get(`/dashboard/report-jobs/${encodeURIComponent(jobId)}`)
+export const cancelReportJob = (jobId) => request.post(`/dashboard/report-jobs/${encodeURIComponent(jobId)}/cancel`)
+export const retryReportJob = (jobId) => request.post(`/dashboard/report-jobs/${encodeURIComponent(jobId)}/retry`)
 export const getReports = (params) => request.get('/dashboard/reports', { params })
 
 // 盘点

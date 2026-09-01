@@ -8,6 +8,7 @@ from ..core.auth import get_current_user
 from ..services.analysis_service import AnalysisService
 from ..services.warning_service import WarningService
 from ..services.report_service import ReportService
+from ..services.report_job_service import ReportJobService
 from ..database import get_ai_db
 from ..models.asset import AiAsset
 from ..models.transfer import AiTransferSuggestion
@@ -119,10 +120,34 @@ def handle_warning(warning_id: int, status: int, remark: str = "", user: AiUser 
 
 @router.post("/report/generate-monthly")
 def generate_monthly_report(year: int, month: int, user: AiUser = Depends(get_current_user)):
-    svc = ReportService()
-    data = svc.generate_monthly_report(year, month, user.user_name)
-    svc.close()
-    return data
+    if not 1 <= month <= 12:
+        raise HTTPException(422, "month must be between 1 and 12")
+    job = ReportJobService.submit(year, month, user.user_name)
+    return ReportJobService.payload(job)
+
+
+@router.get("/report-jobs/{job_id}")
+def get_report_job(job_id: str, user: AiUser = Depends(get_current_user)):
+    job = ReportJobService.get(job_id, user.user_name)
+    if not job:
+        raise HTTPException(404, "report job not found")
+    return ReportJobService.payload(job)
+
+
+@router.post("/report-jobs/{job_id}/cancel")
+def cancel_report_job(job_id: str, user: AiUser = Depends(get_current_user)):
+    job = ReportJobService.cancel(job_id, user.user_name)
+    if not job:
+        raise HTTPException(409, "only queued report jobs can be cancelled")
+    return ReportJobService.payload(job)
+
+
+@router.post("/report-jobs/{job_id}/retry")
+def retry_report_job(job_id: str, user: AiUser = Depends(get_current_user)):
+    job = ReportJobService.retry(job_id, user.user_name)
+    if not job:
+        raise HTTPException(409, "only failed or cancelled report jobs can be retried")
+    return ReportJobService.payload(job)
 
 
 @router.get("/reports")
