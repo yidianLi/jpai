@@ -40,10 +40,19 @@ class ReportService:
         warnings = self.warning.get_warning_list(status=0, size=100)
         idle_stats = self.idle.get_idle_stats()
 
+        snapshot_time = datetime.now().isoformat()
         content = {
             "period": period, "overview": overview, "class_distribution": class_dist,
             "department_ranking": dept_rank, "warnings": warnings, "idle_stats": idle_stats,
-            "generate_time": datetime.now().isoformat()
+            "generate_time": snapshot_time,
+            "snapshot": {
+                "captured_at": snapshot_time,
+                "data_cutoff": overview.get("data_cutoff"),
+                "rules_version": "report-v1",
+                "ai_used": False,
+                "metric_definitions": overview.get("metric_definitions", {}),
+                "source_tables": ["ai_asset", "ai_asset_transfer", "ai_warning", "ai_idle_pool"]
+            }
         }
 
         # 生成Word
@@ -151,5 +160,14 @@ class ReportService:
             "total": total, "page": page, "size": size,
             "list": [{"id": r.id, "type": r.report_type, "title": r.title,
                       "period": r.period, "file_path": r.file_path,
-                      "create_time": str(r.create_time)} for r in rows]
+                      "create_time": str(r.create_time),
+                      "snapshot": self._snapshot_metadata(r.content)} for r in rows]
         }
+
+    @staticmethod
+    def _snapshot_metadata(content):
+        try:
+            data = json.loads(content or "{}")
+            return data.get("snapshot", {"ai_used": False, "rules_version": "legacy"})
+        except (TypeError, ValueError):
+            return {"ai_used": False, "rules_version": "legacy"}
