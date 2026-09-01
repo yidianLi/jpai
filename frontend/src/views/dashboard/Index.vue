@@ -229,7 +229,7 @@ const loadReports = async () => {
     const filename = String(row.file_path || '').split(/[\\/]/).pop()
     const token = localStorage.getItem('token')
     try {
-      const response = await fetch(`/api/dashboard/reports/${encodeURIComponent(filename)}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      const response = await fetch(`/api/dashboard/reports/id/${encodeURIComponent(row.id)}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
       if (!response.ok) throw new Error(response.status === 401 ? '登录已过期，请重新登录' : '报告下载失败')
       const blob = await response.blob()
       const url = URL.createObjectURL(blob)

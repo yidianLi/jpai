@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from fastapi.responses import FileResponse
 from pathlib import Path
 from ..models.dict import AiUser
+from ..models.report import AiReport
 from ..core.auth import get_current_user
 from ..services.analysis_service import AnalysisService
 from ..services.warning_service import WarningService
@@ -156,6 +157,19 @@ def report_list(type: str = None, page: int = 1, size: int = 20, user: AiUser = 
     data = svc.get_report_list(type, page, size)
     svc.close()
     return data
+
+@router.get('/reports/id/{report_id}')
+def download_report_by_id(report_id: int, db: Session = Depends(get_ai_db), user: AiUser = Depends(get_current_user)):
+    report = db.query(AiReport).filter(AiReport.id == report_id).first()
+    if not report or (user.is_admin != 1 and report.create_user != user.user_name):
+        raise HTTPException(404, '鎶ュ憡涓嶅瓨鍦ㄦ垨鏃犳潈璁块棶')
+    safe_name = Path(report.file_path or '').name
+    path = Path('reports') / safe_name
+    if safe_name != report.file_path or path.suffix.lower() != '.docx' or not path.is_file():
+        raise HTTPException(404, 'report file not found')
+    if path.stat().st_size > 20 * 1024 * 1024:
+        raise HTTPException(413, '鎶ュ憡鏂囦欢瓒呭嚭澶у皬闄愬埗')
+    return FileResponse(path, filename=safe_name, media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
 
 @router.get('/reports/{filename}')
 def download_report(filename: str, user: AiUser = Depends(get_current_user)):
