@@ -38,6 +38,7 @@
 
     <!-- 评估结果弹窗 -->
     <el-dialog v-model="evalVisible" title="AI报废评估结果" width="600px">
+      <el-alert v-if="evalError" :title="evalError" type="error" show-icon :closable="false" />
       <div v-if="evalResult" class="eval-result">
         <el-alert :title="`评估结论：${evalResult.eval_result_text}`" :type="evalResult.eval_result==1?'error':evalResult.eval_result==2?'success':'warning'" show-icon style="margin-bottom:16px;" />
         <el-descriptions :column="2" border size="small">
@@ -59,7 +60,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { getExpireList, evaluateAsset, batchEvaluate } from '@/api'
 import FilterChips from '@/components/FilterChips.vue'
 
@@ -73,6 +74,7 @@ const clearFilters = () => { filterDays.value=null; page.value=1; loadList() }
 const selected = ref([])
 const evalVisible = ref(false)
 const evalResult = ref(null)
+const evalError = ref('')
 
 const loadList = async () => {
   const res = await getExpireList({ days: filterDays.value || undefined, page: page.value, size: 20 })
@@ -80,13 +82,13 @@ const loadList = async () => {
   total.value = res.total
 }
 const evaluate = async (row) => {
-  evalResult.value = await evaluateAsset(row.asset_id)
-  evalVisible.value = true
+  evalError.value=''; evalVisible.value = true
+  try { evalResult.value = await evaluateAsset(row.asset_id) } catch { evalError.value='评估失败，请关闭后重试'; evalResult.value=null }
 }
 const batchEval = async () => {
+  if (!selected.value.length) return
   const ids = selected.value.map(r => r.asset_id)
-  const results = await batchEvaluate(ids)
-  ElMessage.success(`已完成${results.length}台资产评估，详情请查看评估记录`)
+  try { await ElMessageBox.confirm(`将评估已选的 ${ids.length} 台资产，是否继续？`,'确认批量评估',{type:'warning'}); const results = await batchEvaluate(ids); ElMessage.success(`已完成${results.length}台资产评估，详情请查看评估记录`) } catch {}
   console.log('批量评估结果:', results)
 }
 onMounted(loadList)

@@ -39,6 +39,7 @@
       <el-tab-pane label="系统配置" name="config">
         <div class="tech-card">
           <div class="card-title">系统参数配置</div>
+          <el-alert v-if="configError" :title="configError" type="error" show-icon :closable="false" class="config-error" />
           <el-form :inline="true" size="default">
             <el-form-item label="闲置判定天数"><el-input-number v-model="config.idle_days" :min="30" /></el-form-item>
             <el-form-item label="残值率"><el-input-number v-model="config.residual_rate" :min="0" :max="1" :step="0.01" /></el-form-item>
@@ -102,6 +103,7 @@ const aiConfig = reactive({ enabled: true, provider: 'openai', base_url: '', mod
 const usageLoading = ref(false)
 const aiUsage = ref({})
 const usageLogs = ref([])
+const configError = ref('')
 
 const doSync = async (type) => {
   syncLoading.value = true
@@ -122,7 +124,7 @@ const saveHeadcount = async (row) => {
 const loadLlmHealth = async () => {
   try { llmHealth.value = await getLlmHealth() } catch { llmHealth.value = { status: 'unknown' } }
 }
-const saveConfig = () => { ElMessage.success('配置已保存（演示）') }
+const saveConfig = () => { if(config.idle_days < 30 || config.residual_rate < 0 || config.residual_rate > 1 || config.expire_red < 1 || config.expire_yellow < 1) { configError.value='请检查配置范围：闲置天数≥30，残值率 0–1，预警天数需大于 0'; return }; configError.value=''; ElMessage.success('配置已保存（演示）') }
 const loadAiConfig = async () => { Object.assign(aiConfig, await getAiConfig()) }
 const loadAiUsage = async () => {
   usageLoading.value = true
@@ -146,6 +148,7 @@ onMounted(() => { loadDepts(); loadLlmHealth(); loadAiConfig(); loadAiUsage() })
 </script>
 
 <style scoped>
+.config-error{margin-bottom:16px}
 .card-title { font-size:16px; font-weight:650; color:#20334d; margin-bottom:12px; border-left:3px solid #1769aa; padding-left:10px; }
 :deep(.el-tabs__item) { color:#53657d; font-weight:500; }
 :deep(.el-tabs__item.is-active) { color:#1769aa; font-weight:650; }
