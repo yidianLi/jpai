@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from ..models.dict import AiUser
 from ..core.auth import get_current_user
@@ -8,6 +8,7 @@ import re
 import json
 from datetime import datetime
 from ..models.procurement import AiProcurementSuggestion
+from ..core.audit import record as record_audit
 
 router = APIRouter()
 
@@ -27,10 +28,10 @@ def preview(class_id: int = None, quantity: int = 1, dept_id: int = None, user: 
     finally: svc.close()
 
 @router.post('/suggestions')
-def save_suggestion(payload: SaveSuggestionRequest, user: AiUser = Depends(get_current_user)):
+def save_suggestion(payload: SaveSuggestionRequest, request: Request, user: AiUser = Depends(get_current_user)):
     db = ProcurementService().db
     row = AiProcurementSuggestion(class_id=payload.class_id, quantity=payload.quantity, payload=json.dumps(payload.preview, ensure_ascii=False), created_by=user.user_id, created_at=datetime.now())
-    db.add(row); db.commit(); db.refresh(row); result={'id': row.id, 'status': row.status}; db.close(); return result
+    db.add(row); db.flush(); record_audit(db, user, 'procurement.create', f'suggestion:{row.id}', after={'class_id': row.class_id, 'quantity': row.quantity}, request=request); db.commit(); db.refresh(row); result={'id': row.id, 'status': row.status}; db.close(); return result
 
 @router.get('/suggestions')
 def list_suggestions(user: AiUser = Depends(get_current_user)):
@@ -39,11 +40,11 @@ def list_suggestions(user: AiUser = Depends(get_current_user)):
     result=[{'id':r.id,'class_id':r.class_id,'quantity':r.quantity,'status':r.status,'created_at':r.created_at} for r in rows]; db.close(); return {'list': result}
 
 @router.post('/suggestions/{suggestion_id}/confirm')
-def confirm_suggestion(suggestion_id: int, user: AiUser = Depends(get_current_user)):
+def confirm_suggestion(suggestion_id: int, request: Request, user: AiUser = Depends(get_current_user)):
     db = ProcurementService().db; row = db.query(AiProcurementSuggestion).filter(AiProcurementSuggestion.id == suggestion_id, AiProcurementSuggestion.created_by == user.user_id).first()
     if not row: db.close(); raise HTTPException(404, '采购建议不存在')
     if row.status != 'draft': db.close(); raise HTTPException(409, '采购建议当前状态不可确认')
-    row.status='confirmed'; row.confirmed_by=user.user_id; row.confirmed_at=datetime.now(); db.commit(); db.close(); return {'id': suggestion_id, 'status': 'confirmed'}
+    before = {'status': row.status}; row.status='confirmed'; row.confirmed_by=user.user_id; row.confirmed_at=datetime.now(); record_audit(db, user, 'procurement.confirm', f'suggestion:{suggestion_id}', before=before, after={'status': row.status}, request=request); db.commit(); db.close(); return {'id': suggestion_id, 'status': 'confirmed'}
 
 @router.post('/ai-preview')
 async def ai_preview(payload: AiPreviewRequest, user: AiUser = Depends(get_current_user)):

@@ -4,3 +4,4 @@ from .warning import AiWarning, AiIdlePool, AiScrapEvaluation
 from .report import AiReport, AiDataClean, AiQualityIssue, AiNlQueryLog, AiPurchaseForecast, AiConfig
 from .transfer import AiTransferSuggestion, AiTransferAudit
 from .procurement import AiProcurementSuggestion
+from .audit import AiAuditEvent

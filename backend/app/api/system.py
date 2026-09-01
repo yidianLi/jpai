@@ -1,14 +1,30 @@
 """系统管理接口：数据同步、字典、部门人数维护、配置"""
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from ..database import get_ai_db
 from ..models.dict import AiUser, AiDepartment, AiCompany, AiAssetClass, AiAssetState
 from ..models.report import AiConfig
+from ..models.audit import AiAuditEvent
 from ..core.auth import get_current_user, require_admin
 from ..services.sync_service import SyncService
+from ..core.audit import record as record_audit
 
 router = APIRouter()
+
+@router.get("/audit-events")
+def list_audit_events(page: int = 1, size: int = 50, db: Session = Depends(get_ai_db), user: AiUser = Depends(require_admin)):
+    if page < 1 or size < 1 or size > 200:
+        raise HTTPException(422, "page must be >= 1 and size must be between 1 and 200")
+    query = db.query(AiAuditEvent).order_by(AiAuditEvent.created_at.desc(), AiAuditEvent.id.desc())
+    total = query.count()
+    rows = query.offset((page - 1) * size).limit(size).all()
+    return {"total": total, "page": page, "size": size, "list": [
+        {"id": row.id, "actor_user_id": row.actor_user_id, "actor_name": row.actor_name,
+         "action": row.action, "resource": row.resource, "result": row.result,
+         "request_id": row.request_id, "ip": row.ip, "created_at": row.created_at}
+        for row in rows
+    ]}
 
 
 class AiRuntimeConfig(BaseModel):
@@ -112,7 +128,7 @@ def get_ai_config(db: Session = Depends(get_ai_db), user: AiUser = Depends(requi
 
 
 @router.put("/ai-config")
-def update_ai_config(payload: AiRuntimeConfig, db: Session = Depends(get_ai_db), user: AiUser = Depends(require_admin)):
+def update_ai_config(payload: AiRuntimeConfig, request: Request, db: Session = Depends(get_ai_db), user: AiUser = Depends(require_admin)):
     if payload.provider == "openai" and (not payload.base_url or not payload.model):
         raise HTTPException(422, "线上AI需要填写接口地址和模型名称")
     updates = {
@@ -128,5 +144,6 @@ def update_ai_config(payload: AiRuntimeConfig, db: Session = Depends(get_ai_db),
             existing[key].config_value = value
         else:
             db.add(AiConfig(config_key=key, config_value=value, description="AI运行配置"))
+    record_audit(db, user, "system.ai_config.update", "ai_config", after={"enabled": payload.enabled, "provider": payload.provider, "model": payload.model}, request=request)
     db.commit()
     return {"message": "AI配置已保存并立即生效"}
