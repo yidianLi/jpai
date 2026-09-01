@@ -49,6 +49,14 @@ class AnalysisService:
             "idle_rate": round(idle / total * 100, 1) if total else 0,
             "match_rate": match_rate,
             "latest_check_date": str(latest_check) if latest_check else None,
+            "data_cutoff": str(self.db.query(func.max(AiAsset.sync_time)).scalar()) if self.db.query(func.max(AiAsset.sync_time)).scalar() else None,
+            "rules_version": "dashboard-v1",
+            "generated_at": datetime.now().isoformat(),
+            "metric_definitions": {
+                "idle_rate": "闲置资产数 / 资产总数；闲置状态或 is_idle=1",
+                "match_rate": "最近一次盘点中状态为正常的记录 / 有盘点结果记录",
+                "warning_count": "当前 status=0 的预警数量"
+            }
         }
 
     def get_class_distribution(self):
@@ -91,13 +99,14 @@ class AnalysisService:
                 AiAssetTransfer.bill_type.in_([15000, 15100, 15200, 15300, 15400, 15500, 19000]),
                 AiAssetTransfer.bill_date >= m, AiAssetTransfer.bill_date < next_m
             ).scalar() or 0
-            result.append({"month": m.strftime("%Y-%m"), "added": added, "reduced": reduced})
+            result.append({"month": m.strftime("%Y-%m"), "added": added, "reduced": reduced,
+                           "metric_basis": "入库 bill_type=10100/10300；减少 bill_type=15000-15500/19000"})
         return result
 
     def get_dept_ranking(self):
         """部门资产排名"""
         rows = self.db.query(
-            AiAsset.dept_name,
+            AiAsset.dept_id, AiAsset.dept_name,
             func.count(AiAsset.asset_id).label("cnt"),
             func.sum(AiAsset.buy_price).label("val"),
             func.sum(case((AiAsset.is_idle == 1, 1), else_=0)).label("idle_cnt")
@@ -105,8 +114,9 @@ class AnalysisService:
             AiAsset.dept_name
         ).order_by(func.count(AiAsset.asset_id).desc()).all()
         return [{
-            "dept": r[0], "count": r[1], "value": round(r[2] or 0, 2),
-            "idle_count": r[3], "idle_rate": round(r[3] / r[1] * 100, 1) if r[1] else 0
+            "dept_id": r[0], "dept": r[1], "count": r[2], "value": round(r[3] or 0, 2),
+            "idle_count": r[4], "idle_rate": round(r[4] / r[2] * 100, 1) if r[2] else 0,
+            "metric_basis": "按部门聚合资产台账，闲置率=闲置资产数/部门资产数"
         } for r in rows[:15]]
 
     def get_department_headcount(self):
