@@ -53,8 +53,8 @@
     </div>
     <div class="tech-card operations-panel">
       <div class="card-title">运营效果</div>
-      <el-table :data="operationalMonths" size="small" max-height="220">
-        <el-table-column prop="month" label="月份" width="100" />
+      <el-table :data="operationalMonths" size="small" max-height="220" @row-click="openOperation">
+            <el-table-column prop="month" label="月份" width="100" />
         <el-table-column prop="transfer_count" label="调拨次数" width="100" />
             <el-table-column prop="idle_saving_amount" label="利旧金额" width="120" />
         <el-table-column prop="check_anomaly_rate" label="盘点异常率" width="120"><template #default="{ row }">{{ row.check_anomaly_rate }}%</template></el-table-column>
@@ -110,7 +110,7 @@
             <span>实时预警</span>
             <el-button type="primary" link size="small" @click="loadWarnings">刷新</el-button>
           </div>
-          <div v-for="w in warnings.list" :key="w.id" class="warning-item">
+          <div v-for="w in warnings.list" :key="w.id" class="warning-item" @click="openWarning(w)">
             <span :class="w.level == 1 ? 'dot-red' : w.level == 2 ? 'dot-yellow' : 'dot-blue'"></span>
             <span class="warning-text">{{ w.content }}</span>
             <span class="warning-date">{{ w.date }}</span>
@@ -123,7 +123,9 @@
     <el-drawer v-model="drillVisible" :title="drillTitle" size="620px" destroy-on-close>
       <div class="drill-summary" v-if="drillDept"><div><span>部门</span><strong>{{ drillDept.dept }}</strong></div><div><span>资产数</span><strong>{{ drillDept.count }}</strong></div><div><span>原值</span><strong>¥{{ Number(drillDept.value || 0).toLocaleString() }}</strong></div><div><span>闲置率</span><strong>{{ drillDept.idle_rate }}%</strong></div></div>
       <el-divider content-position="left">资产明细</el-divider>
-      <el-table :data="drillAssets" v-loading="drillLoading" size="small" height="280" empty-text="暂无可见资产明细"><el-table-column prop="barcode" label="资产编号" min-width="140"/><el-table-column prop="asset_name" label="资产名称" min-width="150"/><el-table-column prop="state_name" label="状态" width="90"/><el-table-column prop="current_value" label="净值(元)" width="110"/></el-table>
+      <div v-if="selectedAsset" class="asset-focus"><div class="asset-focus-head"><strong>{{ selectedAsset.asset_name || selectedAsset.barcode || '资产详情' }}</strong><el-button link type="primary" @click="selectedAsset=null">返回列表</el-button></div><el-descriptions :column="2" border size="small"><el-descriptions-item label="资产编号">{{ selectedAsset.barcode || '-' }}</el-descriptions-item><el-descriptions-item label="状态">{{ selectedAsset.state_name || '-' }}</el-descriptions-item><el-descriptions-item label="部门">{{ selectedAsset.dept_name || '-' }}</el-descriptions-item><el-descriptions-item label="净值">¥{{ Number(selectedAsset.current_value || 0).toLocaleString() }}</el-descriptions-item></el-descriptions></div>
+      <el-table v-else :data="drillAssets" v-loading="drillLoading" size="small" height="280" empty-text="暂无可见资产明细" @row-click="selectedAsset=$event"><el-table-column prop="barcode" label="资产编号" min-width="140"/><el-table-column prop="asset_name" label="资产名称" min-width="150"/><el-table-column prop="state_name" label="状态" width="90"/><el-table-column prop="current_value" label="净值(元)" width="110"/></el-table>
+      <div v-if="drillContext" class="drill-context"><el-alert :title="drillContext.title" type="info" :closable="false"/><p v-if="drillContext.description">{{ drillContext.description }}</p><div v-if="drillContext.metrics" class="context-metrics"><span v-for="m in drillContext.metrics" :key="m.label"><b>{{ m.value }}</b>{{ m.label }}</span></div></div>
       <el-divider content-position="left">最近操作审计</el-divider>
       <el-table :data="drillAudits" v-loading="drillLoading" size="small" height="220" empty-text="暂无审计记录"><el-table-column prop="created_at" label="时间" min-width="150"/><el-table-column prop="action" label="操作" min-width="130"/><el-table-column prop="result" label="结果" width="80"/><el-table-column prop="actor_name" label="操作人" width="100"/></el-table>
     </el-drawer>
@@ -146,7 +148,7 @@ const deptRanking = ref([])
 const warnings = reactive({ list: [], total: 0 })
 const actionItems = reactive({ total: 0, high_count: 0, estimated_saving: 0, items: [] })
 const operationalMonths = ref([])
-const drillVisible = ref(false); const drillLoading = ref(false); const drillDept = ref(null); const drillAssets = ref([]); const drillAudits = ref([])
+const drillVisible = ref(false); const drillLoading = ref(false); const drillDept = ref(null); const drillAssets = ref([]); const drillAudits = ref([]); const selectedAsset = ref(null); const drillContext = ref(null)
 const drillTitle = computed(() => drillDept.value ? `${drillDept.value.dept} · 运营下钻` : '运营下钻')
   const reportMonth = ref('')
 const genLoading = ref(false)
@@ -266,7 +268,7 @@ const loadReports = async () => {
 const loadActionItems = async () => Object.assign(actionItems, await getActionItems())
 const goAction = item => router.push(item.link)
 const openDept = async (row) => {
-  drillDept.value = row; drillVisible.value = true; drillLoading.value = true
+  drillDept.value = row; selectedAsset.value = null; drillContext.value = null; drillVisible.value = true; drillLoading.value = true
   try {
     const assetsPromise = queryAssets({ dept_id: row.dept_id, page: 1, size: 20 })
     const auditsPromise = userStore.user?.is_admin == 1 ? getAuditEvents({ page: 1, size: 20 }) : Promise.resolve({ list: [] })
@@ -274,6 +276,9 @@ const openDept = async (row) => {
     drillAssets.value = assets.list || []; drillAudits.value = audits.list || []
   } catch { drillAssets.value = []; drillAudits.value = [] } finally { drillLoading.value = false }
 }
+const loadContextAudits = async matcher => { if(userStore.user?.is_admin != 1) { drillAudits.value=[]; return }; try { const r=await getAuditEvents({page:1,size:20}); drillAudits.value=matcher?(r.list||[]).filter(matcher):(r.list||[]) } catch { drillAudits.value=[] } }
+const openOperation = (row) => { drillDept.value = null; selectedAsset.value = null; drillAssets.value=[]; drillContext.value = { title: `${row.month} 运营指标事实口径`, description: '以下指标沿用后端事实计算口径；审计列表展示系统近期相关操作记录。', metrics: [{ label: '调拨次数', value: row.transfer_count }, { label: '利旧金额', value: `¥${Number(row.idle_saving_amount || 0).toLocaleString()}` }, { label: '预警响应率', value: `${row.warning_response_rate}%` }, { label: '报废合规率', value: `${row.scrap_compliance_rate}%` }] }; drillVisible.value = true; drillLoading.value = false; loadContextAudits() }
+const openWarning = (warning) => { drillDept.value = null; selectedAsset.value = null; drillContext.value = { title: '预警响应详情', description: warning.content || warning.warning_content || '当前预警记录', metrics: [{ label: '预警编号', value: warning.id }, { label: '状态', value: warning.status == 1 ? '已处理' : '待处理' }] }; drillAssets.value = []; drillVisible.value = true; loadContextAudits(x => String(x.resource || '').includes(String(warning.id))) }
 const loadView = () => {
   if (isReportView.value) { loadReports(); if (reportJob.value && !['succeeded', 'failed', 'cancelled'].includes(reportJob.value.status)) pollReportJob() }
   else { loadData(); loadWarnings(); loadActionItems() }
@@ -298,5 +303,6 @@ watch(isReportView, loadView)
 .text-yellow { color: #b7791f; }.text-red { color: #c84b54; }
 .warning-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #e8eef5; }.dot-red { width: 8px; height: 8px; border-radius: 50%; background: #c84b54; }.dot-yellow { width: 8px; height: 8px; border-radius: 50%; background: #d99a23; }.dot-blue { width: 8px; height: 8px; border-radius: 50%; background: #1769aa; }.warning-text { flex: 1; font-size: 13px; color: #354965; }.warning-date { font-size: 12px; color: #718198; }
 .drill-summary { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; padding:12px; background:#f6f9fc; border:1px solid #e2eaf2; border-radius:8px; }.drill-summary span,.drill-summary strong { display:block; }.drill-summary span { color:#8191a7; font-size:12px; }.drill-summary strong { margin-top:4px; color:#20334d; font-size:16px; }
+.drill-context{margin-bottom:16px}.drill-context p{margin:10px 0;color:#718198;line-height:1.6}.context-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.context-metrics span{padding:10px;background:#f6f9fc;border-radius:7px;color:#718198;font-size:12px}.context-metrics b{display:block;margin-bottom:4px;color:#20334d;font-size:16px}.asset-focus{min-height:180px}.asset-focus-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.operations-panel :deep(.el-table__row),.warning-item{cursor:pointer}
 @media (max-width: 900px) { .action-grid { grid-template-columns: 1fr; } .action-summary { display: none; } }
 </style>
