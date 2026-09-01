@@ -8,14 +8,23 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from .config import settings
 from .database import ai_engine, Base
+from .models.procurement import AiProcurementSuggestion
 from .core.scheduler import start_scheduler
-from .api import dashboard, check, idle, lifecycle, scrap, query, system, auth
+from .api import dashboard, check, idle, lifecycle, scrap, query, system, auth, transfer, insight, procurement, orchestration
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 启动：建表、启动定时任务
-    Base.metadata.create_all(bind=ai_engine)
+    # Avoid blocking the server on every restart when the database is unavailable.
+    if settings.CREATE_TABLES_ON_STARTUP:
+        Base.metadata.create_all(bind=ai_engine)
+    # Procurement suggestions may be deployed independently of the full migration bundle.
+    try:
+        AiProcurementSuggestion.__table__.create(bind=ai_engine, checkfirst=True)
+    except Exception:
+        # Keep service startup independent from an unavailable optional write database.
+        pass
     if settings.SYNC_ENABLED:
         start_scheduler()
     yield
@@ -55,3 +64,8 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+app.include_router(transfer.router, prefix=f"{settings.API_PREFIX}/transfer", tags=["资产调拨"])
+app.include_router(insight.router, prefix=f"{settings.API_PREFIX}/insight", tags=["品牌型号分析"])
+app.include_router(procurement.router, prefix=f"{settings.API_PREFIX}/procurement", tags=["采购建议"])
+app.include_router(orchestration.router, prefix=f"{settings.API_PREFIX}/orchestration", tags=["多智能体编排"])

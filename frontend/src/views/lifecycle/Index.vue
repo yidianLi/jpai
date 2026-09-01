@@ -1,7 +1,30 @@
 <template>
   <div>
-    <div class="page-title">资产全生命周期档案</div>
-    <el-row :gutter="16">
+    <div class="page-description">{{ isQualityView ? '定位异常资产，优先处理影响盘点、折旧和决策的数据问题。' : '检索资产后查看完整身份信息、价值信息和流转记录。' }}</div>
+    <el-row v-if="isQualityView" :gutter="16">
+      <el-col :span="24">
+        <div class="tech-card">
+          <div class="card-title">质量概览</div>
+          <el-row :gutter="16">
+            <el-col :span="8"><div class="metric-card"><div class="metric-value">{{ dq.abnormal }}</div><div class="metric-label">异常数据</div></div></el-col>
+            <el-col :span="8"><div class="metric-card"><div class="metric-value metric-warning">{{ dq.abnormal_rate }}%</div><div class="metric-label">异常率</div></div></el-col>
+            <el-col :span="8"><div class="metric-card"><div class="metric-value metric-success">{{ dq.avg_quality_score }}</div><div class="metric-label">平均质量分</div></div></el-col>
+          </el-row>
+        </div>
+        <div class="tech-card" style="margin-top:16px;">
+          <div class="card-title">待处理异常资产</div>
+          <el-table :data="abnormalList" size="small" max-height="520">
+            <el-table-column prop="barcode" label="编号" width="160" />
+            <el-table-column prop="asset_name" label="名称" />
+            <el-table-column prop="dept_name" label="部门" width="160" />
+            <el-table-column prop="data_quality_score" label="质量分" width="100" />
+            <el-table-column label="操作" width="100"><template #default="{ row }"><el-button type="primary" link size="small" @click="openAsset(row)">查看档案</el-button></template></el-table-column>
+          </el-table>
+          <el-empty v-if="!abnormalList.length" description="暂无异常资产" :image-size="70" />
+        </div>
+      </el-col>
+    </el-row>
+    <el-row v-else :gutter="16">
       <el-col :span="10">
         <div class="tech-card">
           <div class="card-title">资产检索</div>
@@ -15,23 +38,6 @@
             <el-table-column prop="state_name" label="状态" width="80" />
           </el-table>
           <el-pagination style="margin-top:10px;justify-content:flex-end;display:flex;" background layout="total, prev, pager, next" :total="searchTotal" :page-size="10" :current-page="searchPage" @current-change="p => {searchPage=p;search()}" />
-        </div>
-        <div class="tech-card" style="margin-top:16px;">
-          <div class="card-title">数据质量</div>
-          <el-row :gutter="12">
-            <el-col :span="8"><div class="metric-card"><div class="metric-value">{{ dq.abnormal }}</div><div class="metric-label">异常数据</div></div></el-col>
-            <el-col :span="8"><div class="metric-card"><div class="metric-value" style="color:#ffaa00">{{ dq.abnormal_rate }}%</div><div class="metric-label">异常率</div></div></el-col>
-            <el-col :span="8"><div class="metric-card"><div class="metric-value" style="color:#00d4aa">{{ dq.avg_quality_score }}</div><div class="metric-label">平均质量分</div></div></el-col>
-          </el-row>
-          <el-button type="primary" size="small" style="margin-top:12px;" @click="showAbnormal = !showAbnormal">查看异常资产</el-button>
-          <el-table :data="abnormalList" size="small" style="margin-top:12px;" v-if="showAbnormal" max-height="200">
-            <el-table-column prop="barcode" label="编号" width="140" />
-            <el-table-column prop="asset_name" label="名称" />
-            <el-table-column prop="data_quality_score" label="质量分" width="80" />
-            <el-table-column label="操作" width="80">
-              <template #default="{ row }"><el-button type="primary" link size="small" @click="selectAsset(row)">清洗</el-button></template>
-            </el-table-column>
-          </el-table>
         </div>
       </el-col>
       <el-col :span="14">
@@ -63,9 +69,9 @@
           <div class="card-title">流转时间轴（{{ asset.stats.transfer_count }}次）</div>
           <el-timeline>
             <el-timeline-item v-for="(t, i) in asset.timeline" :key="i" :timestamp="t.date" placement="top" :type="i==0?'primary':''">
-              <div style="font-weight:bold;color:#e6f1ff;">{{ t.type }}</div>
-              <div style="font-size:12px;color:#8892b0;">工单号: {{ t.bill_no }} | 经办人: {{ t.handler || '-' }}</div>
-              <div v-if="t.fee" style="font-size:12px;color:#ffaa00;">费用: ¥{{ t.fee }}</div>
+              <div style="font-weight:bold;color:#20334d;">{{ t.type }}</div>
+              <div style="font-size:12px;color:#62748c;">工单号: {{ t.bill_no }} | 经办人: {{ t.handler || '-' }}</div>
+              <div v-if="t.fee" style="font-size:12px;color:#a96b0d;">费用: ¥{{ t.fee }}</div>
             </el-timeline-item>
           </el-timeline>
           <el-divider v-if="asset.check_history?.length" />
@@ -78,7 +84,7 @@
             <el-table-column prop="position" label="盘点位置" />
           </el-table>
         </div>
-        <div class="tech-card" v-else style="text-align:center;padding:80px;color:#8892b0;">
+        <div class="tech-card" v-else style="text-align:center;padding:80px;color:#62748c;">
           <el-icon :size="48"><Files /></el-icon>
           <div style="margin-top:12px;">请从左侧选择资产查看详情</div>
         </div>
@@ -88,7 +94,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { Files } from '@element-plus/icons-vue'
 import { queryAssets, getAssetDetail, getDataQuality, getAbnormalAssets } from '@/api'
 
@@ -99,7 +106,8 @@ const searchPage = ref(1)
 const asset = ref(null)
 const dq = ref({})
 const abnormalList = ref([])
-const showAbnormal = ref(false)
+const route = useRoute()
+const isQualityView = computed(() => route.meta.view === 'quality')
 
 const search = async () => {
   const res = await queryAssets({ keyword: keyword.value || undefined, page: searchPage.value, size: 10 })
@@ -109,16 +117,24 @@ const search = async () => {
 const selectAsset = async (row) => {
   asset.value = await getAssetDetail(row.asset_id)
 }
+const openAsset = row => { window.location.assign(`/lifecycle?id=${row.asset_id}`) }
 const loadDQ = async () => { dq.value = await getDataQuality() }
 const loadAbnormal = async () => {
   const res = await getAbnormalAssets({ size: 20 })
   abnormalList.value = res.list
 }
-onMounted(() => { search(); loadDQ(); loadAbnormal() })
+onMounted(async () => {
+  await search()
+  const requestedId = Number(route.query.id)
+  const initialAsset = requestedId
+    ? searchResults.value.find(item => item.asset_id === requestedId)
+    : searchResults.value[0]
+  if (initialAsset) await selectAsset(initialAsset)
+  loadDQ(); loadAbnormal()
+})
 </script>
 
 <style scoped>
-.card-title { font-size: 16px; font-weight: bold; color: #e6f1ff; margin-bottom: 12px; border-left: 3px solid #1890ff; padding-left: 10px; }
-:deep(.el-descriptions__label) { background: #1a2a4a !important; color: #8892b0 !important; width: 100px; }
-:deep(.el-descriptions__content) { color: #e6f1ff !important; }
+.page-description { margin: 0 0 18px; color: #718198; font-size: 13px; }.card-title { font-size: 16px; font-weight: 650; color: #20334d; margin-bottom: 12px; border-left: 3px solid #1769aa; padding-left: 10px; }.metric-warning { color: #b7791f; }.metric-success { color: #198f6b; }
+:deep(.el-descriptions__label) { background: #f5f8fb !important; color: #62748c !important; width: 100px; }:deep(.el-descriptions__content) { color: #20334d !important; }
 </style>

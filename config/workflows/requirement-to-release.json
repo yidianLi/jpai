@@ -1,0 +1,22 @@
+{
+  "id": "requirement-to-release",
+  "version": "2.0",
+  "mode": "gated-sequential-with-optional-branches",
+  "stages": [
+    {"id": "requirements", "agent": "product", "on_success": "project-management"},
+    {"id": "project-management", "agent": "project-manager", "on_success": "business-analysis"},
+    {"id": "business-analysis", "agent": "business-analyst", "on_success": "architecture"},
+    {"id": "architecture", "agent": "system-architect", "on_success": "security-architecture"},
+    {"id": "security-architecture", "agent": "security-architect", "on_success": "database-architecture"},
+    {"id": "database-architecture", "agent": "database-architect", "on_success": "api-design"},
+    {"id": "api-design", "agent": "api-designer", "on_success": "delivery-design"},
+    {"id": "delivery-design", "agent": "devops-architect", "on_success": "uiux"},
+    {"id": "uiux", "agent": "uiux-designer", "on_success": "implementation"},
+    {"id": "implementation", "parallel": ["backend-developer", "frontend-developer", "integration-engineer"], "on_success": "optional-specialists"},
+    {"id": "optional-specialists", "optional": ["mobile-developer", "algorithm-engineer"], "on_success": "tests"},
+    {"id": "tests", "parallel": ["test-engineer", "performance-engineer"], "on_success": "documentation", "on_failure": "implementation"},
+    {"id": "documentation", "agent": "documentation-engineer", "on_success": "review"},
+    {"id": "review", "agent": "reviewer", "on_success": "release", "on_failure": "implementation"},
+    {"id": "release", "agent": "release-operations", "terminal": true}
+  ]
+}

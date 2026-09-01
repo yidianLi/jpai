@@ -131,12 +131,15 @@ class ReportService:
         # 保存记录
         record = AiReport(
             report_type="monthly", title=f"{period}固定资产管理分析报告",
-            period=period, content=json.dumps(content, ensure_ascii=False),
+            # SQLAlchemy 聚合金额可能是 Decimal，标准 JSON 编码器无法直接保存。
+            # 以字符串保留精度，避免报告生成成功后在落库阶段失败。
+            period=period, content=json.dumps(content, ensure_ascii=False, default=str),
             file_path=file_path, create_user=user, create_time=datetime.now()
         )
         self.db.add(record)
         self.db.commit()
-        return {"id": record.id, "title": record.title, "file_path": file_path, "period": period}
+        return {"id": record.id, "title": record.title, "file_path": file_path, "period": period, "ai_used": False,
+                "message": "报告已按规则统计生成；当前数据未调用大模型润色。"}
 
     def get_report_list(self, report_type=None, page=1, size=20):
         q = self.db.query(AiReport)

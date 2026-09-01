@@ -1,5 +1,28 @@
 <template>
-  <div class="dashboard">
+  <div v-if="isReportView" class="dashboard">
+    <div class="page-description">按月生成资产运营报告，并集中管理历史导出文件。</div>
+    <div class="tech-card report-panel">
+      <div class="card-title">生成月度报告</div>
+        <el-space wrap>
+          <el-date-picker v-model="reportMonth" type="month" placeholder="选择报告月份" value-format="YYYY-MM" :disabled-date="disableReportMonth" />
+          <el-tag type="info" effect="plain">未来月份不可选</el-tag>
+          <el-button type="primary" @click="genReport" :loading="genLoading">生成月度报告</el-button>
+        <el-button @click="loadReports">刷新记录</el-button>
+      </el-space>
+        <div class="report-hint">可生成当月及以前月份；报告统计使用当前资产数据快照。</div>
+        <div class="report-hint">AI 状态：当前月报使用规则统计生成，未调用大模型润色。</div>
+      <el-divider />
+      <div class="card-title">历史报告</div>
+      <el-table :data="reports" size="small" max-height="480">
+        <el-table-column prop="title" label="报告名称" />
+        <el-table-column prop="period" label="期间" width="140" />
+        <el-table-column prop="create_time" label="生成时间" width="190" />
+        <el-table-column label="操作" width="100"><template #default="{ row }"><el-button type="primary" link size="small" @click="downloadReport(row)">下载</el-button></template></el-table-column>
+      </el-table>
+      <el-empty v-if="!reports.length" description="暂无历史报告" :image-size="70" />
+    </div>
+  </div>
+  <div v-else class="dashboard">
     <!-- 顶部指标卡 -->
     <el-row :gutter="16" class="metric-row">
       <el-col :span="4" v-for="m in metrics" :key="m.label">
@@ -12,6 +35,16 @@
     </el-row>
 
     <!-- 图表区 -->
+    <div class="tech-card action-panel">
+      <div class="card-title action-title"><span>待我处理</span><span class="action-summary">{{ actionItems.total }} 条待办 · 高优先级 {{ actionItems.high_count }} 条</span></div>
+      <div class="action-grid">
+        <div v-for="item in actionItems.items" :key="item.id" class="action-item" @click="goAction(item)">
+          <span class="action-dot" :class="item.priority"></span><span class="action-text">{{ item.title }}</span>
+          <span v-if="item.amount" class="action-amount">节约 ¥{{ item.amount.toLocaleString() }}</span><el-button link type="primary" size="small">处理</el-button>
+        </div>
+        <el-empty v-if="!actionItems.items.length" description="暂无待处理事项" :image-size="50" />
+      </div>
+    </div>
     <el-row :gutter="16" style="margin-top: 16px;">
       <el-col :span="8">
         <div class="tech-card">
@@ -69,37 +102,15 @@
       </el-col>
     </el-row>
 
-    <!-- 报告生成 -->
-    <el-row :gutter="16" style="margin-top: 16px;">
-      <el-col :span="24">
-        <div class="tech-card">
-          <div class="card-title">报告生成</div>
-          <el-space>
-            <el-date-picker v-model="reportMonth" type="month" placeholder="选择月份" value-format="YYYY-MM" />
-            <el-button type="primary" @click="genReport" :loading="genLoading">生成月度报告</el-button>
-            <el-button @click="loadReports">查看历史报告</el-button>
-          </el-space>
-          <el-table :data="reports" size="small" style="margin-top: 12px;" max-height="200">
-            <el-table-column prop="title" label="报告名称" />
-            <el-table-column prop="period" label="期间" width="120" />
-            <el-table-column prop="create_time" label="生成时间" width="180" />
-            <el-table-column label="操作" width="120">
-              <template #default="{ row }">
-                <el-button type="primary" link size="small" @click="downloadReport(row)">下载</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-      </el-col>
-    </el-row>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick } from 'vue'
+import { ref, reactive, onMounted, nextTick, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
-import { getOverview, getClassDistribution, getStateDistribution, getMonthlyTrend, getDeptRanking, getWarnings, generateMonthlyReport, getReports } from '@/api'
+import { getOverview, getActionItems, getClassDistribution, getStateDistribution, getMonthlyTrend, getDeptRanking, getWarnings, generateMonthlyReport, getReports } from '@/api'
 
 const overview = ref({})
 const classChart = ref()
@@ -107,9 +118,14 @@ const stateChart = ref()
 const trendChart = ref()
 const deptRanking = ref([])
 const warnings = reactive({ list: [], total: 0 })
-const reportMonth = ref('')
+const actionItems = reactive({ total: 0, high_count: 0, estimated_saving: 0, items: [] })
+  const reportMonth = ref('')
 const genLoading = ref(false)
 const reports = ref([])
+const route = useRoute()
+const router = useRouter()
+  const isReportView = computed(() => route.meta.view === 'report')
+  const disableReportMonth = (date) => date > new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)
 
 const metrics = ref([
   { label: '资产总数', value: '-', sub: '' },
@@ -141,26 +157,26 @@ const loadData = async () => {
   echarts.init(classChart.value).setOption({
     tooltip: { trigger: 'item' },
     series: [{ type: 'pie', radius: ['40%', '70%'], data: cls.slice(0, 8).map(c => ({ name: c.name, value: c.count })),
-      itemStyle: { borderColor: '#112240', borderWidth: 2 }, label: { color: '#8892b0' } }]
+      itemStyle: { borderColor: '#ffffff', borderWidth: 2 }, label: { color: '#718198' } }]
   })
   // 状态柱状图
   echarts.init(stateChart.value).setOption({
     tooltip: { trigger: 'axis' },
     grid: { left: 60, right: 20, top: 20, bottom: 40 },
-    xAxis: { type: 'category', data: states.map(s => s.name), axisLabel: { color: '#8892b0', rotate: 30 } },
-    yAxis: { type: 'value', axisLabel: { color: '#8892b0' } },
-    series: [{ type: 'bar', data: states.map(s => s.value), itemStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'#1890ff'},{offset:1,color:'#096dd9'}]) } }]
+    xAxis: { type: 'category', data: states.map(s => s.name), axisLabel: { color: '#718198', rotate: 30 } },
+    yAxis: { type: 'value', axisLabel: { color: '#718198' } },
+    series: [{ type: 'bar', data: states.map(s => s.value), itemStyle: { color: '#1769aa' } }]
   })
   // 趋势折线图
   echarts.init(trendChart.value).setOption({
     tooltip: { trigger: 'axis' },
-    legend: { data: ['新增', '减少'], textStyle: { color: '#8892b0' } },
+    legend: { data: ['新增', '减少'], textStyle: { color: '#718198' } },
     grid: { left: 50, right: 20, top: 40, bottom: 30 },
-    xAxis: { type: 'category', data: trend.map(t => t.month), axisLabel: { color: '#8892b0' } },
-    yAxis: { type: 'value', axisLabel: { color: '#8892b0' } },
+    xAxis: { type: 'category', data: trend.map(t => t.month), axisLabel: { color: '#718198' } },
+    yAxis: { type: 'value', axisLabel: { color: '#718198' } },
     series: [
-      { name: '新增', type: 'line', smooth: true, data: trend.map(t => t.added), itemStyle: { color: '#00d4aa' }, areaStyle: { opacity: 0.2 } },
-      { name: '减少', type: 'line', smooth: true, data: trend.map(t => t.reduced), itemStyle: { color: '#ff4757' }, areaStyle: { opacity: 0.2 } },
+      { name: '新增', type: 'line', smooth: true, data: trend.map(t => t.added), itemStyle: { color: '#198f6b' }, areaStyle: { opacity: 0.12 } },
+      { name: '减少', type: 'line', smooth: true, data: trend.map(t => t.reduced), itemStyle: { color: '#c84b54' }, areaStyle: { opacity: 0.12 } },
     ]
   })
 }
@@ -187,23 +203,41 @@ const loadReports = async () => {
   reports.value = res.list
 }
 
-const downloadReport = (row) => {
-  window.open(`/api${row.file_path.replace('reports', 'dashboard/reports')}`, '_blank')
-}
+  const downloadReport = async (row) => {
+    const filename = String(row.file_path || '').split(/[\\/]/).pop()
+    const token = localStorage.getItem('token')
+    try {
+      const response = await fetch(`/api/dashboard/reports/${encodeURIComponent(filename)}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      if (!response.ok) throw new Error(response.status === 401 ? '登录已过期，请重新登录' : '报告下载失败')
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a'); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url)
+    } catch (error) { ElMessage.error(error.message) }
+  }
 
-onMounted(() => { loadData(); loadWarnings(); loadReports() })
+const loadActionItems = async () => Object.assign(actionItems, await getActionItems())
+const goAction = item => router.push(item.link)
+const loadView = () => {
+  if (isReportView.value) loadReports()
+  else { loadData(); loadWarnings(); loadActionItems() }
+}
+onMounted(loadView)
+watch(isReportView, loadView)
 </script>
 
 <style scoped>
 .metric-row { margin-bottom: 0; }
-.card-title { font-size: 16px; font-weight: bold; color: #e6f1ff; margin-bottom: 12px; border-left: 3px solid #1890ff; padding-left: 10px; }
+.action-panel { margin-top: 16px; }
+.action-title { display:flex; justify-content:space-between; align-items:center; }
+.action-summary { color:#718198; font-size:12px; font-weight:400; }
+.action-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 24px; }
+.action-item { display:flex; align-items:center; gap:8px; min-height:36px; padding:6px 0; border-bottom:1px solid #e8eef5; cursor:pointer; }
+.action-dot { width:8px; height:8px; flex:0 0 8px; border-radius:50%; background:#1769aa; }.action-dot.high { background:#c84b54; }.action-dot.medium { background:#c98516; }
+.action-text { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#354965; font-size:13px; }.action-amount { color:#198f6b; font-size:12px; white-space:nowrap; }
+.card-title { font-size: 16px; font-weight: 650; color: #20334d; margin-bottom: 12px; border-left: 3px solid #1769aa; padding-left: 10px; }
+  .page-description { margin: 0 0 18px; color: #718198; font-size: 13px; }.report-panel { max-width: 980px; }.report-hint { margin-top: 8px; color: #8795a8; font-size: 12px; }
 .metric-sub { font-size: 12px; margin-top: 4px; }
-.text-yellow { color: #ffaa00; }
-.text-red { color: #ff4757; }
-.warning-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #233554; }
-.dot-red { width: 8px; height: 8px; border-radius: 50%; background: #ff4757; box-shadow: 0 0 8px #ff4757; }
-.dot-yellow { width: 8px; height: 8px; border-radius: 50%; background: #ffaa00; box-shadow: 0 0 8px #ffaa00; }
-.dot-blue { width: 8px; height: 8px; border-radius: 50%; background: #1890ff; }
-.warning-text { flex: 1; font-size: 13px; color: #c8d6e5; }
-.warning-date { font-size: 12px; color: #8892b0; }
+.text-yellow { color: #b7791f; }.text-red { color: #c84b54; }
+.warning-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #e8eef5; }.dot-red { width: 8px; height: 8px; border-radius: 50%; background: #c84b54; }.dot-yellow { width: 8px; height: 8px; border-radius: 50%; background: #d99a23; }.dot-blue { width: 8px; height: 8px; border-radius: 50%; background: #1769aa; }.warning-text { flex: 1; font-size: 13px; color: #354965; }.warning-date { font-size: 12px; color: #718198; }
+@media (max-width: 900px) { .action-grid { grid-template-columns: 1fr; } .action-summary { display: none; } }
 </style>

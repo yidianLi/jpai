@@ -1,6 +1,5 @@
 <template>
   <div>
-    <div class="page-title">闲置资产盘活</div>
     <el-row :gutter="16">
       <el-col :span="6"><div class="metric-card"><div class="metric-value">{{ stats.idle_count }}</div><div class="metric-label">闲置资产数</div></div></el-col>
       <el-col :span="6"><div class="metric-card"><div class="metric-value" style="color:#ffaa00">¥{{ (stats.idle_value/10000)?.toFixed(1) }}万</div><div class="metric-label">估算闲置价值</div></div></el-col>
@@ -20,25 +19,25 @@
           <el-button type="primary" size="small" @click="refresh">刷新闲置池</el-button>
         </el-space>
       </div>
-      <el-table :data="list" size="small" max-height="500">
-        <el-table-column prop="barcode" label="资产编号" width="160" />
-        <el-table-column prop="asset_name" label="资产名称" />
-        <el-table-column prop="model" label="型号" width="140" />
-        <el-table-column prop="dept_name" label="所属部门" width="120" />
-        <el-table-column prop="position" label="存放位置" width="140" />
-        <el-table-column prop="buy_price" label="原值(元)" width="100" />
-        <el-table-column prop="estimated_value" label="估算价值" width="100" />
-        <el-table-column prop="idle_days" label="闲置天数" width="90">
+      <el-table :data="list" size="small" width="100%" max-height="500" fit class="idle-table">
+        <el-table-column prop="barcode" label="资产编号" width="180" show-overflow-tooltip />
+        <el-table-column prop="asset_name" label="资产名称" width="185" show-overflow-tooltip />
+        <el-table-column prop="model" label="型号" min-width="255" show-overflow-tooltip />
+        <el-table-column prop="dept_name" label="所属部门" width="165" show-overflow-tooltip />
+        <el-table-column prop="position" label="存放位置" width="175" show-overflow-tooltip />
+        <el-table-column prop="buy_price" label="原值(元)" width="125" :formatter="formatAmount" />
+        <el-table-column prop="estimated_value" label="估算价值" width="125" :formatter="formatAmount" />
+        <el-table-column prop="idle_days" label="闲置天数" width="105">
           <template #default="{ row }"><span :class="row.idle_days>=180?'tag-red':'tag-yellow'">{{ row.idle_days }}天</span></template>
         </el-table-column>
-        <el-table-column label="建议" width="100">
+        <el-table-column label="建议" width="115">
           <template #default="{ row }">
             <span :class="row.suggest_action=='scrap'?'tag-red':row.suggest_action=='transfer'?'tag-blue':'tag-green'">
               {{ row.suggest_action=='scrap'?'建议报废':row.suggest_action=='transfer'?'建议调拨':'继续使用' }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100">
+        <el-table-column label="操作" width="115">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="transfer(row)">标记调拨</el-button>
           </template>
@@ -51,8 +50,10 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getIdlePool, getIdleStats, refreshIdle, markTransfer } from '@/api'
+import { getIdlePool, getIdleStats, refreshIdle } from '@/api'
+const router = useRouter()
 
 const list = ref([])
 const stats = ref({})
@@ -60,6 +61,7 @@ const total = ref(0)
 const page = ref(1)
 const searchDept = ref('')
 const minDays = ref(null)
+const formatAmount = (_, __, value) => value == null ? '-' : Number(value).toLocaleString('zh-CN', { maximumFractionDigits: 2 })
 
 const loadList = async () => {
   const res = await getIdlePool({ dept: searchDept.value || undefined, min_days: minDays.value || undefined, page: page.value, size: 20 })
@@ -73,14 +75,15 @@ const refresh = async () => {
   loadList(); loadStats()
 }
 const transfer = async (row) => {
-  await ElMessageBox.confirm(`确认将资产"${row.asset_name}"标记为已调拨？`, '确认', { type: 'warning' })
-  await markTransfer(row.id)
-  ElMessage.success('已标记')
-  loadList(); loadStats()
+  router.push({ path: '/transfer', query: { asset_id: row.id } })
 }
-onMounted(() => { loadList(); loadStats() })
+onMounted(async () => {
+  await Promise.allSettled([loadList(), loadStats()])
+})
 </script>
 
 <style scoped>
-.card-title { font-size: 16px; font-weight: bold; color: #e6f1ff; margin-bottom: 12px; border-left: 3px solid #1890ff; padding-left: 10px; }
+.card-title { font-size:16px; font-weight:650; color:#20334d; margin-bottom:12px; border-left:3px solid #1769aa; padding-left:10px; }
+.idle-table :deep(.el-table__cell) { padding:10px 12px; }
+.idle-table :deep(.cell) { line-height:20px; }
 </style>

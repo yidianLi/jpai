@@ -3,7 +3,7 @@
     <div class="login-box tech-card">
       <div class="login-title">
         <el-icon :size="32" color="#1890ff"><Monitor /></el-icon>
-        <h1>AI数智化资产管理系统</h1>
+        <h1>简普数智资产管理后台</h1>
         <p>AI-Powered Fixed Asset Management</p>
       </div>
       <el-form @submit.prevent="handleLogin">

@@ -6,24 +6,53 @@
 import json
 import logging
 import httpx
+import os
 from ..config import settings
+from ..database import AiSessionLocal
+from ..models.report import AiConfig
 
 logger = logging.getLogger(__name__)
 
 
 class LLMService:
     def __init__(self):
-        self.provider = settings.LLM_PROVIDER  # "ollama" or "openai"
-        self.enabled = settings.LLM_ENABLED
+        runtime_config = self._load_runtime_config()
+        self.provider = runtime_config["provider"]
+        self.enabled = runtime_config["enabled"]
         if self.provider == "openai":
-            self.base_url = settings.OPENAI_API_BASE.rstrip("/")
-            self.api_key = settings.OPENAI_API_KEY
-            self.model = settings.OPENAI_MODEL
+            self.base_url = runtime_config["base_url"].rstrip("/")
+            self.api_key = runtime_config["api_key"]
+            self.model = runtime_config["model"]
         else:
-            self.base_url = settings.OLLAMA_BASE_URL.rstrip("/")
+            self.base_url = runtime_config["base_url"].rstrip("/")
             self.api_key = ""
-            self.model = settings.OLLAMA_MODEL
+            self.model = runtime_config["model"]
+        self.last_error = ""
 
+    @staticmethod
+    def _load_runtime_config():
+        """数据库配置优先，未配置时回退到环境变量。"""
+        values = {}
+        db = AiSessionLocal()
+        try:
+            values = {row.config_key: row.config_value for row in db.query(AiConfig).filter(
+                AiConfig.config_key.in_(["ai_provider", "ai_enabled", "ai_base_url", "ai_api_key", "ai_model"])
+            ).all()}
+        except Exception as exc:
+            logger.warning("读取AI运行配置失败，使用环境变量: %s", exc)
+        finally:
+            db.close()
+        provider = os.getenv("LLM_PROVIDER") or settings.LLM_PROVIDER or values.get("ai_provider")
+        env_base = os.getenv("OPENAI_API_BASE") if provider == "openai" else os.getenv("OLLAMA_BASE_URL")
+        env_key = os.getenv("OPENAI_API_KEY")
+        env_model = os.getenv("OPENAI_MODEL") if provider == "openai" else os.getenv("OLLAMA_MODEL")
+        return {
+            "provider": provider if provider in ("openai", "ollama") else settings.LLM_PROVIDER,
+            "enabled": (os.getenv("LLM_ENABLED") or values.get("ai_enabled", str(settings.LLM_ENABLED))).lower() == "true",
+            "base_url": env_base or (settings.OPENAI_API_BASE if provider == "openai" else settings.OLLAMA_BASE_URL) or values.get("ai_base_url", ""),
+            "api_key": env_key or settings.OPENAI_API_KEY or values.get("ai_api_key", ""),
+            "model": env_model or (settings.OPENAI_MODEL if provider == "openai" else settings.OLLAMA_MODEL) or values.get("ai_model", ""),
+        }
     async def chat(self, prompt: str, system_prompt: str = None, temperature: float = 0.3) -> str:
         """调用大模型（自动适配本地/线上）"""
         if not self.enabled:
@@ -58,6 +87,7 @@ class LLMService:
                     data = resp.json()
                     return data.get("message", {}).get("content", "")
         except Exception as e:
+            self.last_error = str(e)
             logger.error(f"LLM调用失败({self.provider}): {e}")
             return ""
 
@@ -83,10 +113,14 @@ class LLMService:
             start = result.find("{")
             end = result.rfind("}") + 1
             if start >= 0 and end > start:
-                return json.loads(result[start:end])
+                parsed = json.loads(result[start:end])
+                parsed["model_used"] = True
+                parsed["model_error"] = ""
+                return parsed
         except Exception as e:
             logger.error(f"NL查询解析失败: {e}, result: {result}")
-        return {"intent": "unknown", "filters": {}, "answer_hint": ""}
+        return {"intent": "unknown", "filters": {}, "answer_hint": "",
+                "model_used": bool(result), "model_error": self.last_error}
 
     async def polish_report(self, report_data: dict) -> str:
         """用大模型润色报告文字"""
@@ -121,6 +155,3 @@ class LLMService:
                 return {"status": "error", "message": f"HTTP {resp.status_code}"}
             except Exception as e:
                 return {"status": "offline", "provider": "ollama", "message": str(e)}
-
-
-llm_service = LLMService()

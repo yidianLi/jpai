@@ -1,6 +1,6 @@
 """闲置资产识别与盘活服务"""
-from datetime import datetime, date
-from sqlalchemy import and_
+from datetime import datetime, date, timedelta
+from sqlalchemy import and_, func
 from ..database import AiSessionLocal
 from ..models.asset import AiAsset
 from ..models.warning import AiIdlePool
@@ -18,18 +18,21 @@ class IdleService:
         """刷新闲置资产池：状态=归还回库(10500)且变更日期超过阈值"""
         today = date.today()
         # 先更新资产表的闲置标记
+        cutoff = datetime.combine(today - timedelta(days=settings.IDLE_THRESHOLD_DAYS), datetime.min.time())
         assets = self.db.query(AiAsset).filter(AiAsset.state_id == 10500).all()
-        idle_ids = []
+        if not assets:
+            assets = self.db.query(AiAsset).filter(
+                AiAsset.change_date.isnot(None),
+                AiAsset.change_date <= cutoff,
+                AiAsset.state_id.notin_([15000, 15100, 15200, 19900]),
+            ).all()
+
+        self.db.query(AiAsset).update({"is_idle": 0, "idle_days": 0}, synchronize_session=False)
         for a in assets:
             if a.change_date:
                 idle_days = (today - a.change_date.date()).days
                 a.idle_days = idle_days
                 a.is_idle = 1 if idle_days >= settings.IDLE_THRESHOLD_DAYS else 0
-                if a.is_idle:
-                    idle_ids.append(a.asset_id)
-            else:
-                a.idle_days = 0
-                a.is_idle = 0
         self.db.commit()
 
         # 重建闲置池
@@ -73,15 +76,19 @@ class IdleService:
 
     def get_idle_stats(self):
         """闲置统计"""
-        total = self.db.query(AiIdlePool).filter(AiIdlePool.status == 0).count()
-        total_value = self.db.query(AiIdlePool.estimated_value).filter(AiIdlePool.status == 0).all()
-        total_val = sum(r[0] or 0 for r in total_value)
+        active = self.db.query(
+            func.count(AiIdlePool.id),
+            func.coalesce(func.sum(AiIdlePool.estimated_value), 0),
+            func.coalesce(func.avg(AiIdlePool.idle_days), 0),
+        ).filter(AiIdlePool.status == 0).one()
+        total = active[0] or 0
+        total_val = active[1] or 0
         transferred = self.db.query(AiIdlePool).filter(AiIdlePool.status == 1).count()
         return {
             "idle_count": total,
             "idle_value": round(total_val, 2),
             "transferred_count": transferred,
-            "avg_idle_days": round(self.db.query(AiIdlePool.idle_days).filter(AiIdlePool.status == 0).all() and sum(r[0] for r in self.db.query(AiIdlePool.idle_days).filter(AiIdlePool.status == 0).all()) / max(total, 1), 1)
+            "avg_idle_days": round(float(active[2] or 0), 1),
         }
 
     def mark_transferred(self, idle_id, user):

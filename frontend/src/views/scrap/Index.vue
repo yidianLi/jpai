@@ -1,6 +1,5 @@
 <template>
   <div>
-    <div class="page-title">报废与处置智能决策</div>
     <div class="tech-card">
       <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
         <span>到期资产清单</span>
@@ -49,7 +48,7 @@
         </el-descriptions>
         <el-divider />
         <div style="font-weight:bold;margin-bottom:8px;">评估依据：</div>
-        <div v-for="(r, i) in evalResult.reasons" :key="i" style="padding:4px 0;color:#c8d6e5;">• {{ r }}</div>
+        <div v-for="(r, i) in evalResult.reasons" :key="i" style="padding:4px 0;color:#354965;">• {{ r }}</div>
         <el-alert v-if="evalResult.abnormal" title="注意：该资产使用不足1/3年限即建议报废，需重点审核！" type="error" show-icon style="margin-top:12px;" />
       </div>
     </el-dialog>
@@ -88,6 +87,6 @@ onMounted(loadList)
 </script>
 
 <style scoped>
-.card-title { font-size: 16px; font-weight: bold; color: #e6f1ff; margin-bottom: 12px; border-left: 3px solid #1890ff; padding-left: 10px; }
+.card-title { font-size:16px; font-weight:650; color:#20334d; margin-bottom:12px; border-left:3px solid #1769aa; padding-left:10px; }
 .eval-result { padding: 10px 0; }
 </style>

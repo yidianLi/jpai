@@ -1,6 +1,6 @@
 """智能盘点分析服务"""
 from datetime import datetime, date, timedelta
-from sqlalchemy import func, and_
+from sqlalchemy import case, func, and_
 from ..database import AiSessionLocal
 from ..models.asset import AiAsset, AiCheckRecord
 
@@ -17,10 +17,10 @@ class CheckService:
         rows = self.db.query(
             AiCheckRecord.check_bid, AiCheckRecord.check_title, AiCheckRecord.check_date,
             func.count(AiCheckRecord.id).label("total"),
-            func.sum((AiCheckRecord.check_state == 1).cast(int)).label("normal"),
-            func.sum((AiCheckRecord.check_state == 2).cast(int)).label("loss"),
-            func.sum((AiCheckRecord.check_state == 3).cast(int)).label("mismatch"),
-            func.sum((AiCheckRecord.check_state == 0).cast(int)).label("unchecked"),
+            func.sum(case((AiCheckRecord.check_state == 1, 1), else_=0)).label("normal"),
+            func.sum(case((AiCheckRecord.check_state == 2, 1), else_=0)).label("loss"),
+            func.sum(case((AiCheckRecord.check_state == 3, 1), else_=0)).label("mismatch"),
+            func.sum(case((AiCheckRecord.check_state == 0, 1), else_=0)).label("unchecked"),
         ).group_by(AiCheckRecord.check_bid, AiCheckRecord.check_title, AiCheckRecord.check_date
         ).order_by(AiCheckRecord.check_date.desc()).all()
         return [{

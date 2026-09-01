@@ -3,9 +3,10 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    APP_NAME: str = "AI数智化资产管理系统"
+    APP_NAME: str = "简普数智资产管理后台"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
+    CREATE_TABLES_ON_STARTUP: bool = False
     API_PREFIX: str = "/api"
 
     AI_DB_HOST: str = "127.0.0.1"

@@ -91,6 +91,16 @@ class SyncService:
                 ))
             self.ai.commit()
             logger.info(f"用户同步完成: {len(rows)}条")
+            # 以源系统有效用户按部门汇总人数，自动刷新人均资产分析基数。
+            from sqlalchemy import func
+            counts = self.ai.query(AiUser.dept_id, func.count(AiUser.user_id)).filter(
+                AiUser.state == 1, AiUser.dept_id.isnot(None)
+            ).group_by(AiUser.dept_id).all()
+            self.ai.query(AiDepartment).update({AiDepartment.headcount: 0})
+            for dept_id, count in counts:
+                self.ai.query(AiDepartment).filter(AiDepartment.dept_id == dept_id).update({AiDepartment.headcount: count})
+            self.ai.commit()
+            logger.info("部门人数已按在职用户自动更新")
         except Exception as e:
             self.ai.rollback()
             logger.error(f"用户同步失败: {e}")

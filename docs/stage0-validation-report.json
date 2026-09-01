@@ -1,0 +1,1028 @@
+{
+  "generated_at": "2026-08-31T09:16:51",
+  "read_only": true,
+  "repair_bill_type": 10700,
+  "assets": {
+    "total": 14263,
+    "missing_brand": 14260,
+    "missing_model": 0,
+    "missing_buy_date": 0
+  },
+  "repairs": {
+    "total": 1,
+    "distinct_assets": 1,
+    "unlinked": 1,
+    "fee_total": 0.0,
+    "fee_missing": 1,
+    "min_date": "2026-06-01",
+    "max_date": "2026-06-01"
+  },
+  "brand_model_top100": [
+    {
+      "brand": null,
+      "model": "中卡、SKI8-LI",
+      "class_id": 129,
+      "asset_count": 510,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "宿舍信息栏",
+      "class_id": 1682,
+      "asset_count": 462,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "1970*970*1700",
+      "class_id": 1792,
+      "asset_count": 440,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "海兴、DDZY208-M",
+      "class_id": 129,
+      "asset_count": 305,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "启天M430E",
+      "class_id": 79,
+      "asset_count": 295,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "中卡/LXSIC-15",
+      "class_id": 129,
+      "asset_count": 284,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "大业DDZY208-M",
+      "class_id": 575,
+      "asset_count": 276,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "NI-HD6000E-A-S-N",
+      "class_id": 139,
+      "asset_count": 264,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "1900*900*1780",
+      "class_id": 1792,
+      "asset_count": 240,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "IPC-B2A4-IR",
+      "class_id": 920,
+      "asset_count": 208,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "双人 1300W*600D*750H",
+      "class_id": 1796,
+      "asset_count": 184,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "三人 1950W*600D*750H",
+      "class_id": 1796,
+      "asset_count": 180,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "H3C EWP-WA4320-ACN-SI-FIT",
+      "class_id": 110,
+      "asset_count": 175,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "美的Midea白色MG907-R",
+      "class_id": 610,
+      "asset_count": 153,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "HP 288 Pro G6 Microtower PC",
+      "class_id": 575,
+      "asset_count": 153,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "2匹单冷分体  KF-50GW/K50356B1N1",
+      "class_id": 459,
+      "asset_count": 144,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "HP 288 PRO G3 MT/V202B",
+      "class_id": 79,
+      "asset_count": 142,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "900*450*900",
+      "class_id": 1815,
+      "asset_count": 140,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "宇视",
+      "class_id": 915,
+      "asset_count": 136,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "DELL OPTIPLEX 3050 MICRO",
+      "class_id": 79,
+      "asset_count": 120,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "宇视 IPC-B201",
+      "class_id": 920,
+      "asset_count": 120,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "大业DE32LR",
+      "class_id": 575,
+      "asset_count": 120,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "DELL OPTIPLEX 3020 MD10034。",
+      "class_id": 79,
+      "asset_count": 104,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "PRODESK 480",
+      "class_id": 79,
+      "asset_count": 102,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "520*470*1050",
+      "class_id": 1802,
+      "asset_count": 100,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "8+3MM亚克力夹高清相纸，广告钉固定300*600M",
+      "class_id": 1682,
+      "asset_count": 97,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "国产定制",
+      "class_id": 141,
+      "asset_count": 96,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "900*420*1800",
+      "class_id": 1815,
+      "asset_count": 85,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "IPC-S214-IR",
+      "class_id": 920,
+      "asset_count": 84,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "惠普 PRODESK 480G4 MT",
+      "class_id": 79,
+      "asset_count": 84,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "艾迪思特IDSTE智能触摸面板CP-03",
+      "class_id": 802,
+      "asset_count": 83,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "富可士S400",
+      "class_id": 1796,
+      "asset_count": 82,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "IDSITE NC-02H",
+      "class_id": 90,
+      "asset_count": 82,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "IDSITE KC-609",
+      "class_id": 185,
+      "asset_count": 82,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "KF-72GW/K(72356)A1-N1",
+      "class_id": 459,
+      "asset_count": 81,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "联想启天M540 AMD R5 5600G 16G",
+      "class_id": 79,
+      "asset_count": 80,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "惠普HP288 PRO G6",
+      "class_id": 79,
+      "asset_count": 79,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "OPTIPLEX 3020",
+      "class_id": 79,
+      "asset_count": 78,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "SONBS/SA-306",
+      "class_id": 936,
+      "asset_count": 75,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "450*400*820mm",
+      "class_id": 1799,
+      "asset_count": 70,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "OPTIPLEX 3050 MICRO",
+      "class_id": 79,
+      "asset_count": 70,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "HP PRODESK 480 G2 MT HP V20",
+      "class_id": 79,
+      "asset_count": 69,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "SMTJFMF-500/G/485/JS/F",
+      "class_id": 185,
+      "asset_count": 68,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "大业SK18-LI",
+      "class_id": 575,
+      "asset_count": 65,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "小耳朵12VDC  2A",
+      "class_id": 920,
+      "asset_count": 62,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "都信DXRT-POEA24",
+      "class_id": 561,
+      "asset_count": 62,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "定制",
+      "class_id": 1796,
+      "asset_count": 61,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "宇视HIC2121ES-DF36IR-UV",
+      "class_id": 888,
+      "asset_count": 60,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "宇视TR-UM06-A",
+      "class_id": 920,
+      "asset_count": 60,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "启天M530-A634",
+      "class_id": 79,
+      "asset_count": 60,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "启天M710E E7500",
+      "class_id": 79,
+      "asset_count": 59,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "3匹单冷分体  KF-72GW/K72356A1N1",
+      "class_id": 459,
+      "asset_count": 59,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "IPC-B314-IR",
+      "class_id": 920,
+      "asset_count": 59,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "双人 1200W*600D*750H",
+      "class_id": 1796,
+      "asset_count": 58,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "SFP-XG-SX-MM850-D",
+      "class_id": 110,
+      "asset_count": 57,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "湖山HY100",
+      "class_id": 936,
+      "asset_count": 56,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "H3C EWP-WA4320H-FIT",
+      "class_id": 110,
+      "asset_count": 55,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "2000*930*2100",
+      "class_id": 1815,
+      "asset_count": 55,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "HP PRODESK 480 G4 MT",
+      "class_id": 79,
+      "asset_count": 54,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "富可士S400",
+      "class_id": 129,
+      "asset_count": 54,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "湖山HY100",
+      "class_id": 931,
+      "asset_count": 54,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "冷轧钢板",
+      "class_id": 1811,
+      "asset_count": 51,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "鑫澳康/OFS9-2T",
+      "class_id": 185,
+      "asset_count": 51,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "35CM 厚/600X600MM",
+      "class_id": 1872,
+      "asset_count": 50,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "DELL LATITUDE 3320 I5-1145G",
+      "class_id": 82,
+      "asset_count": 50,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "HP285 PRO G6 AMD RYZEN 5 46",
+      "class_id": 79,
+      "asset_count": 50,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "定制：太阳遮光布窗帘",
+      "class_id": 68,
+      "asset_count": 50,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "HP 285 pro G3 MT Business P",
+      "class_id": 79,
+      "asset_count": 50,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "桌椅",
+      "class_id": 1825,
+      "asset_count": 50,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "1400*600*750mm",
+      "class_id": 1793,
+      "asset_count": 49,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "宇视、IPC-B2A2-IR",
+      "class_id": 920,
+      "asset_count": 49,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "白雪SF120XEK-D",
+      "class_id": 222,
+      "asset_count": 49,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "HP ELITEDESK 880 G2",
+      "class_id": 84,
+      "asset_count": 49,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "OPTIPLEX 3020 MB10377",
+      "class_id": 79,
+      "asset_count": 48,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "迈致、SP-26",
+      "class_id": 936,
+      "asset_count": 48,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "IQ IRQK100",
+      "class_id": 160,
+      "asset_count": 47,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "2匹KF-50GW/K",
+      "class_id": 459,
+      "asset_count": 47,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "光峰 AL-LW110UST",
+      "class_id": 148,
+      "asset_count": 47,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "三人 1800W*600D*750H",
+      "class_id": 1796,
+      "asset_count": 46,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "PHILIPS223V5LSB2",
+      "class_id": 177,
+      "asset_count": 46,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "万向支架",
+      "class_id": 920,
+      "asset_count": 45,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "升腾C31M",
+      "class_id": 79,
+      "asset_count": 45,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "EWP-WA6330-FIT",
+      "class_id": 129,
+      "asset_count": 43,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "M690E",
+      "class_id": 79,
+      "asset_count": 42,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "HP 288pro G6 16G/256G+1T/4G",
+      "class_id": 79,
+      "asset_count": 42,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "无",
+      "class_id": 1796,
+      "asset_count": 41,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "GP01-011KMGO",
+      "class_id": 110,
+      "asset_count": 41,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "雅卓",
+      "class_id": 1796,
+      "asset_count": 41,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "HP288 PRO G3 MT BUSINESS PC",
+      "class_id": 79,
+      "asset_count": 40,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "HP P1007/P1008/M1136/1213NF",
+      "class_id": 163,
+      "asset_count": 40,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "宇视",
+      "class_id": 138,
+      "asset_count": 40,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "itc/T-778H",
+      "class_id": 936,
+      "asset_count": 40,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "GC-PP09S24F",
+      "class_id": 110,
+      "asset_count": 39,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "启天M610-D540",
+      "class_id": 79,
+      "asset_count": 38,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "宇视IPC-B312-IR",
+      "class_id": 920,
+      "asset_count": 38,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "定制",
+      "class_id": 920,
+      "asset_count": 37,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "GC-CMH1F",
+      "class_id": 110,
+      "asset_count": 36,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "SFP-GE-LX-SM1310-D",
+      "class_id": 129,
+      "asset_count": 36,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "定制",
+      "class_id": 1841,
+      "asset_count": 36,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    },
+    {
+      "brand": null,
+      "model": "EWP-WA6322-FIT",
+      "class_id": 129,
+      "asset_count": 35,
+      "idle_count": "0",
+      "repair_count": 0,
+      "repair_fee": 0.0
+    }
+  ],
+  "sample_assets": [
+    {
+      "asset_id": 241615,
+      "barcode": "2601050100288",
+      "brand": null,
+      "model": "1350*400*2000mm",
+      "class_id": 1811,
+      "repair_count": 0,
+      "repair_fee": 0.0,
+      "repair_dates": []
+    },
+    {
+      "asset_id": 241145,
+      "barcode": "2232111100329",
+      "brand": null,
+      "model": "SONBS/SA-306",
+      "class_id": 936,
+      "repair_count": 0,
+      "repair_fee": 0.0,
+      "repair_dates": []
+    },
+    {
+      "asset_id": 241527,
+      "barcode": "2A0501030300025",
+      "brand": null,
+      "model": "520*470*1050",
+      "class_id": 1802,
+      "repair_count": 0,
+      "repair_fee": 0.0,
+      "repair_dates": []
+    },
+    {
+      "asset_id": 241662,
+      "barcode": "2201050800246",
+      "brand": null,
+      "model": "得力32G",
+      "class_id": 138,
+      "repair_count": 0,
+      "repair_fee": 0.0,
+      "repair_dates": []
+    },
+    {
+      "asset_id": 241181,
+      "barcode": "2232111100365",
+      "brand": null,
+      "model": "SONBS/SA-306",
+      "class_id": 936,
+      "repair_count": 0,
+      "repair_fee": 0.0,
+      "repair_dates": []
+    },
+    {
+      "asset_id": 240792,
+      "barcode": "2210190500675",
+      "brand": null,
+      "model": "KF-72GW/K(72356)A1-N1",
+      "class_id": 459,
+      "repair_count": 0,
+      "repair_fee": 0.0,
+      "repair_dates": []
+    },
+    {
+      "asset_id": 241016,
+      "barcode": "2232110600287",
+      "brand": null,
+      "model": "SONBS/SA-300U（G)",
+      "class_id": 931,
+      "repair_count": 0,
+      "repair_fee": 0.0,
+      "repair_dates": []
+    },
+    {
+      "asset_id": 241739,
+      "barcode": "2601050100253",
+      "brand": null,
+      "model": "1800*850*390mm",
+      "class_id": 1811,
+      "repair_count": 0,
+      "repair_fee": 0.0,
+      "repair_dates": []
+    },
+    {
+      "asset_id": 241274,
+      "barcode": "2402000001134",
+      "brand": null,
+      "model": "工艺品",
+      "class_id": 1742,
+      "repair_count": 0,
+      "repair_fee": 0.0,
+      "repair_dates": []
+    },
+    {
+      "asset_id": 241248,
+      "barcode": "2402000001109",
+      "brand": null,
+      "model": "2.4*2.5M高清软膜喷绘",
+      "class_id": 1682,
+      "repair_count": 0,
+      "repair_fee": 0.0,
+      "repair_dates": []
+    }
+  ],
+  "compatibility_notes": [
+    "聚合使用 SQLAlchemy 表达式，避免依赖 MySQL 专有函数。",
+    "迁移 DDL 中的 JSON 类型需在目标国产数据库验证，必要时使用 TEXT。"
+  ]
+}

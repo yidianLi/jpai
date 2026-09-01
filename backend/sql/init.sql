@@ -4,7 +4,7 @@ USE ai_asset_db;
 
 -- 系统配置初始数据
 INSERT INTO ai_config (config_key, config_value, description) VALUES
-('system_name', 'AI数智化资产管理系统', '系统名称'),
+('system_name', '简普数智资产管理后台', '系统名称'),
 ('idle_threshold_days', '90', '闲置判定天数阈值'),
 ('residual_rate', '0.05', '残值率'),
 ('expire_red_days', '90', '到期红色预警天数'),

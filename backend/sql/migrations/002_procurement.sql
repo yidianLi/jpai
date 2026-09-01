@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS ai_procurement_suggestion (id BIGINT PRIMARY KEY AUTO_INCREMENT,class_id INT NULL,quantity INT NOT NULL,payload TEXT NOT NULL,status VARCHAR(20) NOT NULL DEFAULT 'draft',created_by BIGINT NOT NULL,created_at DATETIME NOT NULL,confirmed_by BIGINT NULL,confirmed_at DATETIME NULL,KEY idx_procurement_status(status),KEY idx_procurement_creator(created_by));

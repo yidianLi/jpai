@@ -1,0 +1,6 @@
+{
+  "enabled": true,
+  "webhook_url": "",
+  "timeout_seconds": 10,
+  "retain": 500
+}

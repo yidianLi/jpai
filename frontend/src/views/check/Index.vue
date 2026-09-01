@@ -1,6 +1,5 @@
 <template>
   <div>
-    <div class="page-title">智能盘点分析</div>
     <el-row :gutter="16">
       <el-col :span="8">
         <div class="tech-card">
@@ -39,7 +38,7 @@
             <el-table-column prop="dept" label="部门" />
           </el-table>
         </div>
-        <div class="tech-card" v-else style="text-align:center;padding:60px;color:#8892b0;">
+        <div class="tech-card" v-else style="text-align:center;padding:60px;color:#62748c;">
           请从左侧选择盘点任务查看诊断结果
         </div>
       </el-col>
@@ -100,11 +99,11 @@ loadTasks()
 </script>
 
 <style scoped>
-.card-title { font-size: 16px; font-weight: bold; color: #e6f1ff; margin-bottom: 12px; border-left: 3px solid #1890ff; padding-left: 10px; }
-.task-item { padding: 14px; border: 1px solid #233554; border-radius: 6px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s; }
-.task-item:hover, .task-item.active { border-color: #1890ff; background: rgba(24,144,255,0.1); }
-.task-title { font-weight: bold; color: #e6f1ff; margin-bottom: 4px; }
-.task-meta { font-size: 12px; color: #8892b0; margin-bottom: 8px; }
+.card-title { font-size:16px; font-weight:650; color:#20334d; margin-bottom:12px; border-left:3px solid #1769aa; padding-left:10px; }
+.task-item { padding:14px; border:1px solid #dfe7f0; border-radius:6px; margin-bottom:10px; cursor:pointer; transition:all .2s; }
+.task-item:hover, .task-item.active { border-color:#1769aa; background:#f0f7fd; }
+.task-title { font-weight:650; color:#20334d; margin-bottom:4px; }
+.task-meta { font-size:12px; color:#62748c; margin-bottom:8px; }
 .task-stats { display: flex; gap: 6px; flex-wrap: wrap; }
-.suggestion { padding: 6px 0; color: #c8d6e5; font-size: 14px; }
+.suggestion { padding:6px 0; color:#354965; font-size:14px; }
 </style>

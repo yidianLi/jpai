@@ -1,0 +1,20 @@
+{
+  "version": "2.0",
+  "agents": ["product", "project-manager", "business-analyst", "system-architect", "security-architect", "database-architect", "api-designer", "devops-architect", "uiux-designer", "backend-developer", "frontend-developer", "mobile-developer", "algorithm-engineer", "integration-engineer", "test-engineer", "performance-engineer", "documentation-engineer", "reviewer", "release-operations"],
+  "rules": {
+    "handoff_required": true,
+    "review_required_before_release": true,
+    "preserve_user_changes": true,
+    "max_retries": 2,
+    "optional_agents": ["mobile-developer", "algorithm-engineer", "performance-engineer"],
+    "gates": ["security", "tests", "performance", "documentation"]
+  },
+  "triggers": [
+    {"event": "requirement.created", "start": "product"},
+    {"event": "requirements.approved", "start": "project-manager"},
+    {"event": "architecture.approved", "start": "backend-developer"},
+    {"event": "implementation.ready", "start": "test-engineer"},
+    {"event": "gates.passed", "start": "release-operations"},
+    {"event": "release.failed", "start": "project-manager"}
+  ]
+}

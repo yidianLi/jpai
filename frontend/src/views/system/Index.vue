@@ -1,6 +1,5 @@
 <template>
   <div>
-    <div class="page-title">系统管理</div>
     <el-tabs v-model="activeTab">
       <el-tab-pane label="数据同步" name="sync">
         <div class="tech-card">
@@ -49,6 +48,22 @@
           </el-form>
         </div>
       </el-tab-pane>
+      <el-tab-pane label="线上 AI 配置" name="ai">
+        <div class="tech-card ai-config-card">
+          <div class="card-title">AI 服务连接</div>
+          <el-alert type="info" :closable="false" style="margin-bottom:20px;">保存后，自然语言问答和后续接入的报告润色、资产归类等 AI 能力会统一使用此配置。</el-alert>
+          <el-form label-width="108px" style="max-width:720px;">
+            <el-form-item label="启用 AI"><el-switch v-model="aiConfig.enabled" /></el-form-item>
+            <el-form-item label="服务类型"><el-radio-group v-model="aiConfig.provider"><el-radio value="openai">线上兼容接口</el-radio><el-radio value="ollama">本地 Ollama</el-radio></el-radio-group></el-form-item>
+            <template v-if="aiConfig.provider === 'openai'">
+              <el-form-item label="接口地址"><el-input v-model="aiConfig.base_url" placeholder="https://api.example.com/v1" /></el-form-item>
+              <el-form-item label="模型名称"><el-input v-model="aiConfig.model" placeholder="例如：gpt-4o-mini" /></el-form-item>
+              <el-form-item label="API Key"><el-input v-model="aiConfig.api_key" type="password" show-password :placeholder="aiConfig.api_key_configured ? '已配置；留空则不修改' : '请输入 API Key'" /></el-form-item>
+            </template>
+            <el-form-item><el-button type="primary" :loading="aiSaving" @click="saveAiConfig">保存并生效</el-button><span v-if="aiConfig.api_key_configured" class="key-status">API Key 已保存</span></el-form-item>
+          </el-form>
+        </div>
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
@@ -56,13 +71,15 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { syncAll, syncDict, syncAssets, getDepartments, updateHeadcount, getLlmHealth } from '@/api'
+import { syncAll, syncDict, syncAssets, getDepartments, updateHeadcount, getLlmHealth, getAiConfig, updateAiConfig } from '@/api'
 
 const activeTab = ref('sync')
 const syncLoading = ref(false)
 const depts = ref([])
 const llmHealth = ref({})
 const config = reactive({ idle_days: 90, residual_rate: 0.05, expire_red: 90, expire_yellow: 180 })
+const aiSaving = ref(false)
+const aiConfig = reactive({ enabled: true, provider: 'openai', base_url: '', model: '', api_key: '', api_key_configured: false })
 
 const doSync = async (type) => {
   syncLoading.value = true
@@ -84,12 +101,27 @@ const loadLlmHealth = async () => {
   try { llmHealth.value = await getLlmHealth() } catch { llmHealth.value = { status: 'unknown' } }
 }
 const saveConfig = () => { ElMessage.success('配置已保存（演示）') }
-onMounted(() => { loadDepts(); loadLlmHealth() })
+const loadAiConfig = async () => { Object.assign(aiConfig, await getAiConfig()) }
+const saveAiConfig = async () => {
+  aiSaving.value = true
+  try {
+    await updateAiConfig({ enabled: aiConfig.enabled, provider: aiConfig.provider, base_url: aiConfig.base_url, model: aiConfig.model, api_key: aiConfig.api_key })
+    aiConfig.api_key = ''
+    await loadAiConfig()
+    await loadLlmHealth()
+    ElMessage.success('AI 配置已保存并生效')
+  } finally { aiSaving.value = false }
+}
+onMounted(() => { loadDepts(); loadLlmHealth(); loadAiConfig() })
 </script>
 
 <style scoped>
-.card-title { font-size: 16px; font-weight: bold; color: #e6f1ff; margin-bottom: 12px; border-left: 3px solid #1890ff; padding-left: 10px; }
-:deep(.el-tabs__item) { color: #8892b0; }
-:deep(.el-tabs__item.is-active) { color: #1890ff; }
-:deep(.el-tabs__active-bar) { background-color: #1890ff; }
+.card-title { font-size:16px; font-weight:650; color:#20334d; margin-bottom:12px; border-left:3px solid #1769aa; padding-left:10px; }
+:deep(.el-tabs__item) { color:#53657d; font-weight:500; }
+:deep(.el-tabs__item.is-active) { color:#1769aa; font-weight:650; }
+:deep(.el-tabs__active-bar) { background-color:#1769aa; }
+:deep(.el-alert--info) { --el-alert-bg-color:#eef6fd; --el-alert-border-color:#cfe0ef; --el-alert-text-color:#354965; }
+:deep(.el-descriptions__label) { background:#f5f8fb !important; color:#53657d !important; }
+:deep(.el-descriptions__content) { color:#20334d !important; }
+.key-status { margin-left:12px; color:#198f6b; font-size:13px; }
 </style>

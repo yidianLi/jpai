@@ -1,5 +1,6 @@
 """系统管理接口：数据同步、字典、部门人数维护、配置"""
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from ..database import get_ai_db
 from ..models.dict import AiUser, AiDepartment, AiCompany, AiAssetClass, AiAssetState
@@ -8,6 +9,14 @@ from ..core.auth import get_current_user, require_admin
 from ..services.sync_service import SyncService
 
 router = APIRouter()
+
+
+class AiRuntimeConfig(BaseModel):
+    enabled: bool = True
+    provider: str = Field(default="openai", pattern="^(openai|ollama)$")
+    base_url: str = ""
+    api_key: str = ""
+    model: str = ""
 
 
 @router.post("/sync/all")
@@ -38,7 +47,7 @@ def sync_assets(user: AiUser = Depends(require_admin)):
 def list_departments(db: Session = Depends(get_ai_db), user: AiUser = Depends(get_current_user)):
     rows = db.query(AiDepartment).all()
     return [{"dept_id": r.dept_id, "dept_name": r.dept_name, "company_id": r.company_id,
-             "headcount": r.headcount, "parent_id": r.parent_id} for r in rows]
+             "headcount": r.headcount, "headcount_source": "同步用户（在职）" if r.headcount else "未配置", "parent_id": r.parent_id} for r in rows]
 
 
 @router.put("/departments/{dept_id}/headcount")
@@ -86,3 +95,38 @@ def update_config(key: str, value: str, db: Session = Depends(get_ai_db), user: 
         db.add(cfg)
     db.commit()
     return {"message": "配置已更新"}
+
+
+@router.get("/ai-config")
+def get_ai_config(db: Session = Depends(get_ai_db), user: AiUser = Depends(require_admin)):
+    keys = ["ai_enabled", "ai_provider", "ai_base_url", "ai_api_key", "ai_model"]
+    values = {row.config_key: row.config_value for row in db.query(AiConfig).filter(AiConfig.config_key.in_(keys)).all()}
+    api_key = values.get("ai_api_key", "")
+    return {
+        "enabled": values.get("ai_enabled", "true").lower() == "true",
+        "provider": values.get("ai_provider", "openai"),
+        "base_url": values.get("ai_base_url", ""),
+        "model": values.get("ai_model", ""),
+        "api_key_configured": bool(api_key),
+    }
+
+
+@router.put("/ai-config")
+def update_ai_config(payload: AiRuntimeConfig, db: Session = Depends(get_ai_db), user: AiUser = Depends(require_admin)):
+    if payload.provider == "openai" and (not payload.base_url or not payload.model):
+        raise HTTPException(422, "线上AI需要填写接口地址和模型名称")
+    updates = {
+        "ai_enabled": str(payload.enabled).lower(), "ai_provider": payload.provider,
+        "ai_base_url": payload.base_url.strip(), "ai_model": payload.model.strip(),
+    }
+    # 空密钥代表不修改既有密钥，避免回读时暴露敏感配置。
+    if payload.api_key.strip():
+        updates["ai_api_key"] = payload.api_key.strip()
+    existing = {row.config_key: row for row in db.query(AiConfig).filter(AiConfig.config_key.in_(updates)).all()}
+    for key, value in updates.items():
+        if key in existing:
+            existing[key].config_value = value
+        else:
+            db.add(AiConfig(config_key=key, config_value=value, description="AI运行配置"))
+    db.commit()
+    return {"message": "AI配置已保存并立即生效"}

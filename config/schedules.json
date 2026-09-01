@@ -1,0 +1,10 @@
+{
+  "timezone": "Asia/Shanghai",
+  "jobs": [
+    {"id": "project-manager-hourly-dispatch", "event": "project-manager.dispatch", "cron": {"hour": "*", "minute": 0}, "enabled": true},
+    {"id": "orchestration-health", "event": "orchestration.health", "cron": {"hour": 4, "minute": 0}, "enabled": true},
+    {"id": "requirements-scan", "event": "requirement.scan", "cron": {"hour": 8, "minute": 30}, "enabled": true},
+    {"id": "quality-gates", "event": "gates.run", "cron": {"hour": 23, "minute": 0}, "enabled": true},
+    {"id": "release-window-check", "event": "release.window", "cron": {"day_of_week": "mon-fri", "hour": 17, "minute": 30}, "enabled": true}
+  ]
+}
