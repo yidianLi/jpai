@@ -1,5 +1,6 @@
 <template>
-  <div>
+  <div class="page-shell">
+    <header class="page-head"><div><span class="page-kicker">RETIREMENT DECISION</span><h2>报废决策</h2><p>按到期范围筛选资产，查看净值并发起评估。</p></div></header>
     <div class="tech-card">
       <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
         <span>到期资产清单</span>
@@ -87,6 +88,7 @@ onMounted(loadList)
 </script>
 
 <style scoped>
+.page-shell{display:grid;gap:16px}.page-head{display:flex;align-items:flex-end}.page-kicker{font-size:11px;letter-spacing:1.6px;color:#1769aa}.page-head h2{margin:4px 0 6px;font-size:24px}.page-head p{color:#718198;font-size:13px}
 .card-title { font-size:16px; font-weight:650; color:#20334d; margin-bottom:12px; border-left:3px solid #1769aa; padding-left:10px; }
 .eval-result { padding: 10px 0; }
 </style>

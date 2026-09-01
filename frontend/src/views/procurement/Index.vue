@@ -1,7 +1,8 @@
 <template>
-  <div>
+  <div class="page-shell">
+    <header class="page-head"><div><span class="page-kicker">PROCUREMENT DECISION</span><h2>采购建议</h2><p>先盘活闲置资产，再计算采购缺口和预算参考。</p></div></header>
     <div class="page-description">先盘活闲置资产，再计算采购缺口和预算参考。</div>
-    <div class="tech-card">
+    <div class="tech-card input-card">
       <el-form class="procurement-form">
         <el-form-item label="自然语言需求" class="request-field">
           <el-input v-model="text" type="textarea" :rows="2" placeholder="例如：为设计部采购10台笔记本" />
@@ -13,7 +14,7 @@
         <el-button :loading="loading" @click="preview">规则预览</el-button>
       </el-form>
     </div>
-    <div v-if="result" class="tech-card">
+    <div v-if="result" class="tech-card result-card">
       <div class="summary">
         <div><b>{{ result.requested_quantity }}</b><span>需求数量</span></div>
         <div><b>{{ result.available_transfer }}</b><span>可调拨</span></div>
@@ -54,6 +55,9 @@ const loadSuggestions = async () => { const r = await getProcurementSuggestions(
 const confirmSuggestion = async (id) => { await confirmProcurementSuggestion(id); await loadSuggestions() }
 loadSuggestions()
 </script>
+<style scoped>
+.page-shell{display:grid;gap:16px}.page-head{display:flex;align-items:flex-end}.page-kicker{font-size:11px;letter-spacing:1.6px;color:#1769aa}.page-head h2{margin:4px 0 6px;font-size:24px}.page-head p{color:#718198;font-size:13px}.input-card{background:#fff}.result-card{display:grid;gap:16px}.result-card h3{font-size:15px;color:#20334d;margin:4px 0 -4px;border-left:3px solid #1769aa;padding-left:8px}
+</style>
 
 <style scoped>
 .page-description { margin-bottom: 18px; color: #718198 }

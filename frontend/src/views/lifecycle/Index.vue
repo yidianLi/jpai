@@ -1,6 +1,7 @@
 <template>
-  <div>
-    <div class="page-description">{{ isQualityView ? '定位异常资产，优先处理影响盘点、折旧和决策的数据问题。' : '检索资产后查看完整身份信息、价值信息和流转记录。' }}</div>
+  <div class="page-shell">
+    <header class="page-head"><div><span class="page-kicker">ASSET LIFECYCLE</span><h2>{{ isQualityView ? '数据质量' : '资产档案' }}</h2><p>{{ isQualityView ? '定位异常资产，优先处理影响盘点、折旧和决策的数据问题。' : '检索资产后查看完整身份信息、价值信息和流转记录。' }}</p></div></header>
+    <div class="page-description legacy-description">{{ isQualityView ? '质量概览与问题列表' : '支持编号、名称等关键词检索' }}</div>
     <el-row v-if="isQualityView" :gutter="16">
       <el-col :span="24">
         <div class="tech-card">

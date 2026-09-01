@@ -1,12 +1,13 @@
 <template>
-  <div>
+  <div class="page-shell">
+    <header class="page-head"><div><span class="page-kicker">IDLE ASSET ACTIVATION</span><h2>闲置盘活</h2><p>识别闲置资产并优先推进调拨、维修或报废。</p></div><el-button type="primary" @click="refresh">刷新闲置池</el-button></header>
     <el-row :gutter="16">
       <el-col :span="6"><div class="metric-card"><div class="metric-value">{{ stats.idle_count }}</div><div class="metric-label">闲置资产数</div></div></el-col>
       <el-col :span="6"><div class="metric-card"><div class="metric-value" style="color:#ffaa00">¥{{ (stats.idle_value/10000)?.toFixed(1) }}万</div><div class="metric-label">估算闲置价值</div></div></el-col>
       <el-col :span="6"><div class="metric-card"><div class="metric-value" style="color:#00d4aa">{{ stats.transferred_count }}</div><div class="metric-label">已盘活数</div></div></el-col>
       <el-col :span="6"><div class="metric-card"><div class="metric-value">{{ stats.avg_idle_days }}天</div><div class="metric-label">平均闲置时长</div></div></el-col>
     </el-row>
-    <div class="tech-card" style="margin-top:16px;">
+    <div class="tech-card list-card">
       <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
         <span>闲置资产池</span>
         <el-space>
@@ -16,10 +17,10 @@
             <el-option :value="180" label="180天以上" />
             <el-option :value="365" label="1年以上" />
           </el-select>
-          <el-button type="primary" size="small" @click="refresh">刷新闲置池</el-button>
+          <span class="result-count">共 {{ total }} 条资产</span>
         </el-space>
       </div>
-      <el-table :data="list" size="small" width="100%" max-height="500" fit class="idle-table">
+      <el-table :data="list" v-loading="loading" size="small" width="100%" max-height="500" fit class="idle-table" empty-text="当前筛选下暂无闲置资产">
         <el-table-column prop="barcode" label="资产编号" width="180" show-overflow-tooltip />
         <el-table-column prop="asset_name" label="资产名称" width="185" show-overflow-tooltip />
         <el-table-column prop="model" label="型号" min-width="255" show-overflow-tooltip />
@@ -61,12 +62,12 @@ const total = ref(0)
 const page = ref(1)
 const searchDept = ref('')
 const minDays = ref(null)
+const loading = ref(false)
 const formatAmount = (_, __, value) => value == null ? '-' : Number(value).toLocaleString('zh-CN', { maximumFractionDigits: 2 })
 
 const loadList = async () => {
-  const res = await getIdlePool({ dept: searchDept.value || undefined, min_days: minDays.value || undefined, page: page.value, size: 20 })
-  list.value = res.list
-  total.value = res.total
+  loading.value = true
+  try { const res = await getIdlePool({ dept: searchDept.value || undefined, min_days: minDays.value || undefined, page: page.value, size: 20 }); list.value = res.list; total.value = res.total } finally { loading.value = false }
 }
 const loadStats = async () => { stats.value = await getIdleStats() }
 const refresh = async () => {
@@ -83,6 +84,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.page-shell{display:grid;gap:16px}.page-head{display:flex;align-items:flex-end;justify-content:space-between}.page-kicker{font-size:11px;letter-spacing:1.6px;color:#1769aa}.page-head h2{margin:4px 0 6px;font-size:24px}.page-head p,.result-count{color:#718198;font-size:13px}.list-card{margin-top:0}
 .card-title { font-size:16px; font-weight:650; color:#20334d; margin-bottom:12px; border-left:3px solid #1769aa; padding-left:10px; }
 .idle-table :deep(.el-table__cell) { padding:10px 12px; }
 .idle-table :deep(.cell) { line-height:20px; }
